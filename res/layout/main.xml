@@ -6,7 +6,7 @@
     android:orientation="horizontal" >
 
     <ImageButton
-        android:id="@+id/imageButton2"
+        android:id="@+id/homeButton"
         android:layout_width="wrap_content"
         android:layout_height="60dip"
         android:layout_marginLeft="-4dip"
@@ -15,15 +15,16 @@
         android:contentDescription="@string/home_button" />
 
     <Button
-        android:id="@+id/button1"
+        android:id="@+id/accountPicker"
         android:layout_width="0dip"
         android:layout_height="60dip"
         android:layout_marginLeft="-4dip"
         android:layout_marginRight="-4dip"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:text="@string/connect" />
 
     <ImageButton
-        android:id="@+id/imageButton1"
+        android:id="@+id/settingsButton"
         android:layout_width="wrap_content"
         android:layout_height="60dip"
         android:layout_marginLeft="-4dip"
