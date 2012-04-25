@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.TextView;
+import mobisocial.omnistanford.service.LocationService;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
@@ -122,5 +124,12 @@ public class OmniStanfordActivity extends Activity {
         //startActivityForResult(create, REQUEST_CREATE_FEED);
         
         findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
+        
+        bindServices();
+    }
+    
+    private void bindServices() {
+    	Intent locationService = new Intent(this, LocationService.class);
+    	startService(locationService);
     }
 }
