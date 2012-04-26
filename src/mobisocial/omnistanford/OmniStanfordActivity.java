@@ -1,5 +1,7 @@
 package mobisocial.omnistanford;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +13,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -105,22 +108,36 @@ public class OmniStanfordActivity extends Activity {
             return;
         }
         
+        findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
+        
         Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
+        JSONObject primary = new JSONObject();
         JSONArray arr = new JSONArray();
         JSONObject one = new JSONObject();
         try {
-            one.put("principal", "kanak");
+            primary.put("visible", true);
+            one.put("hashed", Base64.encodeToString(digestPrincipal("kanak"), Base64.DEFAULT));
             one.put("name", "Kanak Biscuitwala");
             arr.put(0, one);
+            primary.put("members", arr);
         } catch (JSONException e) {
             Log.e(TAG, "JSON parse error", e);
             return;
         }
         
         Log.d(TAG, arr.toString());
-        create.putExtra(EXTRA_NAME, arr.toString());
+        create.putExtra(EXTRA_NAME, primary.toString());
         //startActivityForResult(create, REQUEST_CREATE_FEED);
-        
-        findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
+    }
+    
+    // TODO: remove this
+    public static byte[] digestPrincipal(String principal) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(principal.getBytes());
+            return md.digest();
+        } catch(NoSuchAlgorithmException e) {
+            throw new RuntimeException("Platform doesn't support sha256?!?!", e);
+        }
     }
 }
