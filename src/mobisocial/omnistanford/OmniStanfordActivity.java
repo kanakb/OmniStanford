@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.TextView;
+import mobisocial.omnistanford.service.LocationService;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
@@ -128,6 +129,8 @@ public class OmniStanfordActivity extends Activity {
         Log.d(TAG, arr.toString());
         create.putExtra(EXTRA_NAME, primary.toString());
         //startActivityForResult(create, REQUEST_CREATE_FEED);
+        
+        bindServices();
     }
     
     // TODO: remove this
@@ -139,5 +142,10 @@ public class OmniStanfordActivity extends Activity {
         } catch(NoSuchAlgorithmException e) {
             throw new RuntimeException("Platform doesn't support sha256?!?!", e);
         }
+    }
+    
+    private void bindServices() {
+    	Intent locationService = new Intent(this, LocationService.class);
+    	startService(locationService);
     }
 }
