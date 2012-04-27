@@ -20,6 +20,12 @@
             </intent-filter>
         </activity>
         <service android:name=".service.LocationService"></service>
+        
+        <receiver android:name=".MessageReceiver">
+		    <intent-filter>
+		        <action android:name="mobisocial.intent.action.DATA_RECEIVED"/>
+		    </intent-filter>
+		</receiver>
     </application>
 
 </manifest>

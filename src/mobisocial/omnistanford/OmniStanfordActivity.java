@@ -20,6 +20,7 @@ import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.TextView;
 import mobisocial.omnistanford.service.LocationService;
+import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
@@ -66,8 +67,8 @@ public class OmniStanfordActivity extends Activity {
                 
                 JSONObject one = new JSONObject();
                 try {
-                    one.put("principal", "kanak");
-                    one.put("name", "Kanak Biscuitwala");
+                    one.put("principal", "stfan");
+                    one.put("name", "Steve Fan");
                     //one.put(Obj.FIELD_RENDER_TYPE, Obj.RENDER_LATEST);
                     one.put(Obj.FIELD_HTML, "<html>hi</html>");
                 } catch (JSONException e) {
@@ -88,11 +89,31 @@ public class OmniStanfordActivity extends Activity {
                 Log.d(TAG, "Names: " + names);
                 Log.d(TAG, "Types: " + types);
                 Log.d(TAG, "Hashes: " + hashes);
-                for (int i = 0; i < names.size(); i++) {
-                    if (types.get(i).equals(ACCOUNT_TYPE_STANFORD)) {
-                        ((TextView)findViewById(R.id.accountPicker)).setText(names.get(i), TextView.BufferType.NORMAL);
-                    }
-                }
+                // TODO: use the first returned account
+                ((TextView)findViewById(R.id.accountPicker)).setText(names.get(0), TextView.BufferType.NORMAL);
+                
+                Util.setPickedAccount(this, names.get(0), types.get(0), hashes.get(0));
+                
+                Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
+				JSONObject primary = new JSONObject();
+				JSONArray arr = new JSONArray();
+				JSONObject one = new JSONObject();
+				try {
+					primary.put("visible", true);
+					one.put("hashed", Base64.encodeToString(digestPrincipal("stfan"), Base64.DEFAULT));
+					one.put("name", "Steve Fan");
+					one.put("type", ACCOUNT_TYPE_STANFORD);
+					arr.put(0, one);
+					primary.put("members", arr);
+					primary.put("sender", types.get(0));
+				} catch (JSONException e) {
+					Log.e(TAG, "JSON parse error", e);
+					return;
+				}
+
+				Log.d(TAG, arr.toString());
+				create.putExtra(EXTRA_NAME, primary.toString());
+				startActivityForResult(create, REQUEST_CREATE_FEED);
             }
         }
     }
@@ -110,26 +131,6 @@ public class OmniStanfordActivity extends Activity {
         }
         
         findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
-        
-        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
-        JSONObject primary = new JSONObject();
-        JSONArray arr = new JSONArray();
-        JSONObject one = new JSONObject();
-        try {
-            primary.put("visible", true);
-            one.put("hashed", Base64.encodeToString(digestPrincipal("kanak"), Base64.DEFAULT));
-            one.put("name", "Kanak Biscuitwala");
-            arr.put(0, one);
-            primary.put("members", arr);
-        } catch (JSONException e) {
-            Log.e(TAG, "JSON parse error", e);
-            return;
-        }
-        
-        Log.d(TAG, arr.toString());
-        create.putExtra(EXTRA_NAME, primary.toString());
-        //startActivityForResult(create, REQUEST_CREATE_FEED);
-        
         bindServices();
     }
     
