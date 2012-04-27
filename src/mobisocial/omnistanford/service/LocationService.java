@@ -26,7 +26,7 @@ public class LocationService extends Service {
 	@Override
 	public void onCreate() {
 		mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-		mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+//		mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
 	}
 	
 	@Override

@@ -1,7 +1,5 @@
 package mobisocial.omnistanford;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -22,10 +20,6 @@ import mobisocial.socialkit.obj.MemObj;
 
 public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
-    
-    private static final String ACTION_CREATE_STANFORD_FEED = "musubi.intent.action.CREATE_STANFORD_FEED";
-    private static final int REQUEST_CREATE_FEED = 1;
-    private static final String EXTRA_NAME = "mobisocial.omnistanford.json";
     
     private Musubi mMusubi;
     
@@ -52,8 +46,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                 
                 JSONObject one = new JSONObject();
                 try {
-                    one.put("principal", "kanak");
-                    one.put("name", "Kanak Biscuitwala");
+                    one.put("principal", "stfan");
+                    one.put("name", "Steve Fan");
                     //one.put(Obj.FIELD_RENDER_TYPE, Obj.RENDER_LATEST);
                     one.put(Obj.FIELD_HTML, "<html>hi</html>");
                 } catch (JSONException e) {
@@ -77,7 +71,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         if (!Musubi.isMusubiInstalled(this)) {
             return;
         }
-        
         Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
         JSONObject primary = new JSONObject();
         JSONArray arr = new JSONArray();
@@ -96,22 +89,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         Log.d(TAG, arr.toString());
         create.putExtra(EXTRA_NAME, primary.toString());
         //startActivityForResult(create, REQUEST_CREATE_FEED);
-        
-        Intent shift = new Intent(this, SelectContactsActivity.class);
-        startActivity(shift);
-        
         bindServices();
-    }
-    
-    // TODO: remove this
-    public static byte[] digestPrincipal(String principal) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(principal.getBytes());
-            return md.digest();
-        } catch(NoSuchAlgorithmException e) {
-            throw new RuntimeException("Platform doesn't support sha256?!?!", e);
-        }
     }
     
     private void bindServices() {
