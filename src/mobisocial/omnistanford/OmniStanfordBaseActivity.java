@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.View.OnClickListener;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class OmniStanfordBaseActivity extends Activity {
@@ -35,6 +36,23 @@ public class OmniStanfordBaseActivity extends Activity {
         public void onClick(View v) {
             Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
             startActivityForResult(picker, REQUEST_PICK_ID);
+        }
+    };
+    
+    private OnClickListener mHomeClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
+            startActivity(home);
+        }
+    };
+    
+    private OnClickListener mSettingsClickListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // TODO: this isn't the right activity
+            Intent create = new Intent(OmniStanfordBaseActivity.this, SelectContactsActivity.class);
+            startActivity(create);
         }
     };
     
@@ -84,11 +102,16 @@ public class OmniStanfordBaseActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.main);
         
+        LinearLayout variableBox = (LinearLayout)findViewById(R.id.contentArea);
+        variableBox.removeAllViewsInLayout();
+        
         if (!Musubi.isMusubiInstalled(this)) {
             return;
         }
         
         findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
+        findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
+        findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
     }
     
     // TODO: remove this

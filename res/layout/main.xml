@@ -48,7 +48,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignRight="@+id/settingsButton"
         android:layout_below="@+id/homeButton"
-        android:orientation="vertical" >
+        android:orientation="vertical"
+        android:isScrollContainer="true" >
 
     </LinearLayout>
 
