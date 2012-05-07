@@ -12,6 +12,11 @@ public class MCheckinData {
     public static final String COL_ID = "_id";
     
     /**
+     * The account that checked in
+     */
+    public static final String COL_ACCOUNT_ID = "account_id";
+    
+    /**
      * The location
      */
     public static final String COL_LOCATION_ID = "location_id";
@@ -27,6 +32,7 @@ public class MCheckinData {
     public static final String COL_EXIT_TIME = "exit_time";
     
     public long id;
+    public Long accountId;
     public Long locationId;
     public Long entryTime;
     public Long exitTime;

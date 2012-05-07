@@ -27,6 +27,11 @@ public class MLocation {
     public static final String COL_PRINCIPAL = "principal";
     
     /**
+     * Account type of the location
+     */
+    public static final String COL_ACCOUNT_TYPE = "account_type";
+    
+    /**
      * Bounding box for location (optional)
      */
     public static final String COL_MIN_LAT = "min_latitude";
@@ -38,6 +43,7 @@ public class MLocation {
     public String name;
     public String type;
     public String principal;
+    public String accountType;
     public Float minLatitude;
     public Float maxLatitude;
     public Float minLongitude;
