@@ -14,7 +14,8 @@ import android.util.Log;
 public class LocationService extends Service {
 	public static final String TAG = "LocationService";
 	
-	private LocationManager mLocationManager;
+	@SuppressWarnings("unused")
+    private LocationManager mLocationManager;
 	private final IBinder mBinder = new LocationBinder();
 	
 	public class LocationBinder extends Binder {

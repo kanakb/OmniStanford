@@ -8,6 +8,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import mobisocial.omnistanford.db.AccountManager;
+import mobisocial.omnistanford.db.DatabaseHelper;
+import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -44,6 +47,7 @@ public class OmniStanfordBaseActivity extends Activity {
         public void onClick(View v) {
             Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
             startActivity(home);
+            finish();
         }
     };
     
@@ -53,6 +57,7 @@ public class OmniStanfordBaseActivity extends Activity {
             // TODO: this isn't the right activity
             Intent create = new Intent(OmniStanfordBaseActivity.this, SelectContactsActivity.class);
             startActivity(create);
+            finish();
         }
     };
     
@@ -68,9 +73,30 @@ public class OmniStanfordBaseActivity extends Activity {
                 Log.d(TAG, "Types: " + types);
                 Log.d(TAG, "Hashes: " + hashes);
                 // TODO: use the first returned account
-                ((TextView)findViewById(R.id.accountPicker)).setText(names.get(0), TextView.BufferType.NORMAL);
                 
-                Util.setPickedAccount(this, names.get(0), types.get(0), hashes.get(0));
+                int i;
+                for (i = 0; i < types.size(); i++) {
+                    if (types.get(i).equals(ACCOUNT_TYPE_STANFORD)) {
+                        break;
+                    }
+                }
+                if (i == types.size()) {
+                    i = 0;
+                }
+
+                DatabaseHelper helper = new DatabaseHelper(this);
+                AccountManager am = new AccountManager(helper);
+                for (int j = 0; j < names.size(); j++) {
+                    MAccount acc = new MAccount();
+                    acc.name = names.get(j);
+                    acc.type = types.get(j);
+                    acc.identifier = hashes.get(j);
+                    am.ensureAccount(acc);
+                }
+                
+                ((TextView)findViewById(R.id.accountPicker)).setText(names.get(i), TextView.BufferType.NORMAL);
+                
+                Util.setPickedAccount(this, names.get(i), types.get(i), hashes.get(i));
                 
                 Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
                 JSONObject primary = new JSONObject();
@@ -91,7 +117,7 @@ public class OmniStanfordBaseActivity extends Activity {
 
                 Log.d(TAG, arr.toString());
                 create.putExtra(EXTRA_NAME, primary.toString());
-                startActivityForResult(create, REQUEST_CREATE_FEED);
+                //startActivityForResult(create, REQUEST_CREATE_FEED);
             }
         }
     }
@@ -112,6 +138,12 @@ public class OmniStanfordBaseActivity extends Activity {
         findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
         findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
         findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
+        
+        String accountName = Util.getPickedAccountName(this);
+        if (accountName != null) {
+            ((TextView)findViewById(R.id.accountPicker))
+                .setText(accountName, TextView.BufferType.NORMAL);
+        }
     }
     
     // TODO: remove this

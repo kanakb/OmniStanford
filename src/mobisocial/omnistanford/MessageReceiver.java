@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import org.json.JSONObject;
-
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -25,6 +23,7 @@ public class MessageReceiver extends BroadcastReceiver {
         }
 
         Musubi musubi = Musubi.forIntent(context, intent);
+        @SuppressWarnings("unused")
         DbObj obj = musubi.objForUri(objUri);
 //        if (obj.getSender().isOwned()) {
 //            return;
