@@ -9,6 +9,10 @@ import android.content.Intent;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import mobisocial.omnistanford.db.DatabaseHelper;
+import mobisocial.omnistanford.db.LocationManager;
+import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.service.RequestHandler;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
@@ -39,28 +43,9 @@ public class MessageReceiver extends BroadcastReceiver {
             return;
         }
         
-        // generate an auto response
-//        DbFeed feed = obj.getContainingFeed();
-//        DbIdentity me = feed.getLocalUser();
-//        List<DbIdentity> members = feed.getMembers();
-//        Log.d(TAG, "My ID: " + me.getId() + " Name: " + me.getName());
-//        for (DbIdentity member : members) {
-//            Log.d(TAG, "ID: " + member.getId() + " Name: " + member.getName());
-//        }
-//        
-//        JSONObject one = new JSONObject();
-//        try {
-//            one.put("principal", "stfan");
-//            one.put("name", "Steve Fan");
-//            //one.put(Obj.FIELD_RENDER_TYPE, Obj.RENDER_LATEST);
-//            one.put(Obj.FIELD_HTML, "<html>pong</html>");
-//        } catch (JSONException e) {
-//            Log.e(TAG, "JSON parse error", e);
-//            return;
-//        }
-//        
-//        feed.insert(new MemObj("omnistanford", one));
-//        Log.d(TAG, feed.getLatestObj().getJson().toString());
+        Intent service = new Intent(context, RequestHandler.class);
+        service.putExtras(intent);
+        context.startService(service);
 
         // Dont notify in Musubi
         Bundle b = new Bundle();

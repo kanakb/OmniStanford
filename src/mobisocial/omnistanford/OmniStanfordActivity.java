@@ -44,18 +44,26 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                     Log.d(TAG, "ID: " + member.getId() + " Name: " + member.getName());
                 }
                 
-                JSONObject one = new JSONObject();
+                JSONObject request = new JSONObject();
                 try {
-                    one.put("principal", "stfan");
-                    one.put("name", "Steve Fan");
-                    //one.put(Obj.FIELD_RENDER_TYPE, Obj.RENDER_LATEST);
-                    one.put(Obj.FIELD_HTML, "<html>hi</html>");
+                	JSONObject from = new JSONObject();
+                	from.put("name", "Steve Fan");
+                	from.put("principal", "wjruoxue@gmail.com");
+                	
+                	JSONObject payload = new JSONObject();
+                	payload.put("lon", 111.11);
+                	payload.put("lat", 99.99);
+                	
+                	request.put("from", from);
+                	request.put("payload", payload);
+                	request.put("route", "checkin");
+                	
                 } catch (JSONException e) {
                     Log.e(TAG, "JSON parse error", e);
                     return;
                 }
                 
-                feed.insert(new MemObj("omnistanford", one));
+                feed.insert(new MemObj("omnistanford", request));
                 Log.d(TAG, feed.getLatestObj().getJson().toString());
                 
             }
@@ -77,8 +85,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         JSONObject one = new JSONObject();
         try {
             primary.put("visible", true);
-            one.put("hashed", Base64.encodeToString(digestPrincipal("kanak"), Base64.DEFAULT));
-            one.put("name", "Kanak Biscuitwala");
+            one.put("hashed", Base64.encodeToString(digestPrincipal("stfan"), Base64.DEFAULT));
+            one.put("name", "Steve Fan");
             arr.put(0, one);
             primary.put("members", arr);
         } catch (JSONException e) {
@@ -88,8 +96,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         Log.d(TAG, arr.toString());
         create.putExtra(EXTRA_NAME, primary.toString());
-        //startActivityForResult(create, REQUEST_CREATE_FEED);
-        bindServices();
+        startActivityForResult(create, REQUEST_CREATE_FEED);
+//        bindServices();
     }
     
     private void bindServices() {
