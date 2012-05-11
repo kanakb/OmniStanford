@@ -96,7 +96,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         Log.d(TAG, arr.toString());
         create.putExtra(EXTRA_NAME, primary.toString());
-        startActivityForResult(create, REQUEST_CREATE_FEED);
+//        startActivityForResult(create, REQUEST_CREATE_FEED);
 //        bindServices();
     }
     

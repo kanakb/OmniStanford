@@ -8,6 +8,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import mobisocial.omnistanford.db.AccountManager;
+import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -70,7 +72,8 @@ public class OmniStanfordBaseActivity extends Activity {
                 // TODO: use the first returned account
                 ((TextView)findViewById(R.id.accountPicker)).setText(names.get(0), TextView.BufferType.NORMAL);
                 
-                Util.setPickedAccount(this, names.get(0), types.get(0), hashes.get(0));
+                // save picked account
+                Util.saveAccount(this, names.get(0), hashes.get(0), types.get(0));
                 
                 Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
                 JSONObject primary = new JSONObject();
@@ -112,6 +115,12 @@ public class OmniStanfordBaseActivity extends Activity {
         findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
         findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
         findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
+        
+        MAccount ac = Util.loadAccount(this);
+        if(ac != null) {
+            ((TextView)findViewById(R.id.accountPicker)).setText(ac.name, TextView.BufferType.NORMAL);
+        }
+
     }
     
     // TODO: remove this
