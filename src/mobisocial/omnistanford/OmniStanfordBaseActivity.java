@@ -81,9 +81,9 @@ public class OmniStanfordBaseActivity extends Activity {
                 JSONObject one = new JSONObject();
                 try {
                     primary.put("visible", true);
-                    one.put("hashed", Base64.encodeToString(digestPrincipal("stfan"), Base64.DEFAULT));
+                    one.put("hashed", Base64.encodeToString(digestPrincipal("arrillaga.stanford@gmail.com"), Base64.DEFAULT));
                     one.put("name", "Steve Fan");
-                    one.put("type", ACCOUNT_TYPE_STANFORD);
+                    one.put("type", "com.google");
                     arr.put(0, one);
                     primary.put("members", arr);
                     primary.put("sender", types.get(0));
