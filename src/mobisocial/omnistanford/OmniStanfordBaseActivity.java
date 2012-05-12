@@ -96,7 +96,8 @@ public class OmniStanfordBaseActivity extends Activity {
                 
                 ((TextView)findViewById(R.id.accountPicker)).setText(names.get(i), TextView.BufferType.NORMAL);
                 
-                Util.setPickedAccount(this, names.get(i), types.get(i), hashes.get(i));
+                Util.saveAccount(this, names.get(i), hashes.get(i), types.get(i));
+
                 
                 Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
                 JSONObject primary = new JSONObject();
@@ -104,9 +105,9 @@ public class OmniStanfordBaseActivity extends Activity {
                 JSONObject one = new JSONObject();
                 try {
                     primary.put("visible", true);
-                    one.put("hashed", Base64.encodeToString(digestPrincipal("stfan"), Base64.DEFAULT));
+                    one.put("hashed", Base64.encodeToString(digestPrincipal("arrillaga.stanford@gmail.com"), Base64.DEFAULT));
                     one.put("name", "Steve Fan");
-                    one.put("type", ACCOUNT_TYPE_STANFORD);
+                    one.put("type", "com.google");
                     arr.put(0, one);
                     primary.put("members", arr);
                     primary.put("sender", types.get(0));
@@ -139,10 +140,9 @@ public class OmniStanfordBaseActivity extends Activity {
         findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
         findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
         
-        String accountName = Util.getPickedAccountName(this);
-        if (accountName != null) {
-            ((TextView)findViewById(R.id.accountPicker))
-                .setText(accountName, TextView.BufferType.NORMAL);
+        MAccount ac = Util.loadAccount(this);
+        if(ac != null) {
+            ((TextView)findViewById(R.id.accountPicker)).setText(ac.name, TextView.BufferType.NORMAL);
         }
     }
     

@@ -1,11 +1,16 @@
 package mobisocial.omnistanford;
 
+import java.util.List;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+
+import mobisocial.omnistanford.service.RequestHandler;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.obj.MemObj;
 import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +21,8 @@ public class MessageReceiver extends BroadcastReceiver {
 	
     @Override
     public void onReceive(Context context, Intent intent) {
+        Log.i(TAG, "received message " + intent);
+
         Uri objUri = intent.getParcelableExtra("objUri");
         if (objUri == null) {
             Log.i("WordPlayNotification", "No object found");
@@ -25,11 +32,13 @@ public class MessageReceiver extends BroadcastReceiver {
         Musubi musubi = Musubi.forIntent(context, intent);
         @SuppressWarnings("unused")
         DbObj obj = musubi.objForUri(objUri);
-//        if (obj.getSender().isOwned()) {
-//            return;
-//        }
+        if (obj.getSender().isOwned()) {
+            return;
+        }
         
-        Log.i(TAG, "received message " + intent);
+        Intent service = new Intent(context, RequestHandler.class);
+        service.putExtras(intent);
+        context.startService(service);
 
         // Dont notify in Musubi
         Bundle b = new Bundle();

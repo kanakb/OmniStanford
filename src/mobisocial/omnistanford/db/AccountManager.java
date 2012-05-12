@@ -97,8 +97,13 @@ public class AccountManager extends ManagerBase {
     public List<MAccount> getAccounts(String accountType) {
         SQLiteDatabase db = initializeDatabase();
         String table = MAccount.TABLE;
-        String selection = MAccount.COL_ACCOUNT_TYPE + "=?";
-        String[] selectionArgs = new String[] { accountType };
+        String selection = null;
+        String[] selectionArgs = null;
+        if(accountType != null) {
+        	selection = MAccount.COL_ACCOUNT_TYPE + "=?";
+        	selectionArgs = new String[] { accountType };
+        }
+       
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
         try {
             List<MAccount> result = new ArrayList<MAccount>();
