@@ -113,34 +113,34 @@ public class LocationService extends Service {
 		return mBinder;
 	}
 	
-	public void postToLocationFeed(MLocation location) {
-	    if (location.feedUri == null) {
-	        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
-	        JSONObject primary = new JSONObject();
-	        JSONArray arr = new JSONArray();
-	        JSONObject one = new JSONObject();
-	        try {
-	            primary.put("visible", false);
-	            one.put("hashed", Base64.encodeToString(
-	                    OmniStanfordBaseActivity.digestPrincipal("arrillaga.stanford@gmail.com"),
-	                    Base64.DEFAULT));
-	            one.put("name", "Arrillaga Family Dining Commons");
-	            one.put("type", location.accountType);
-	            arr.put(0, one);
-	            primary.put("members", arr);
-	            primary.put("sender", Util.getPickedAccountType(this));
-	        } catch (JSONException e) {
-	            Log.e(TAG, "JSON parse error", e);
-	            return;
-	        }
-
-	        Log.d(TAG, arr.toString());
-	        create.putExtra(EXTRA_NAME, primary.toString());
-	        startActivityForResult(create, REQUEST_CREATE_FEED);
-	    }
-	    Musubi musubi = Musubi.getInstance(this);
-	    DbFeed feed = musubi.getFeed(location.feedUri);
-	}
+//	public void postToLocationFeed(MLocation location) {
+//	    if (location.feedUri == null) {
+//	        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
+//	        JSONObject primary = new JSONObject();
+//	        JSONArray arr = new JSONArray();
+//	        JSONObject one = new JSONObject();
+//	        try {
+//	            primary.put("visible", false);
+//	            one.put("hashed", Base64.encodeToString(
+//	                    OmniStanfordBaseActivity.digestPrincipal("arrillaga.stanford@gmail.com"),
+//	                    Base64.DEFAULT));
+//	            one.put("name", "Arrillaga Family Dining Commons");
+//	            one.put("type", location.accountType);
+//	            arr.put(0, one);
+//	            primary.put("members", arr);
+//	            primary.put("sender", Util.getPickedAccountType(this));
+//	        } catch (JSONException e) {
+//	            Log.e(TAG, "JSON parse error", e);
+//	            return;
+//	        }
+//
+//	        Log.d(TAG, arr.toString());
+//	        create.putExtra(EXTRA_NAME, primary.toString());
+//	        startActivityForResult(create, REQUEST_CREATE_FEED);
+//	    }
+//	    Musubi musubi = Musubi.getInstance(this);
+//	    DbFeed feed = musubi.getFeed(location.feedUri);
+//	}
 	
 	LocationListener mLocationListener = new LocationListener() {
 	    private static final int TWO_MINUTES = 1000 * 60 * 2;

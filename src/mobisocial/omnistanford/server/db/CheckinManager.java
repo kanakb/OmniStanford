@@ -1,9 +1,7 @@
-package mobisocial.omnistanford.db;
+package mobisocial.omnistanford.server.db;
 
-import java.util.ArrayList;
-import java.util.List;
+import mobisocial.omnistanford.db.ManagerBase;
 
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
@@ -13,14 +11,14 @@ public class CheckinManager extends ManagerBase {
     public static final String TAG = "CheckinManager";
     
     private static final int _id = 0;
-    private static final int account_id = 1;
+    private static final int user_id = 1;
     private static final int location_id = 2;
     private static final int entry_time = 3;
     private static final int exit_time = 4;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
-    	MCheckinData.COL_ACCOUNT_ID,
+    	MCheckinData.COL_USER_ID,
     	MCheckinData.COL_LOCATION_ID,
     	MCheckinData.COL_ENTRY_TIME,
     	MCheckinData.COL_EXIT_TIME
@@ -44,7 +42,7 @@ public class CheckinManager extends ManagerBase {
             synchronized(this) {
                 StringBuilder sql = new StringBuilder(" INSERT INTO ")
                     .append(MCheckinData.TABLE).append("(")
-                    .append(MCheckinData.COL_ACCOUNT_ID).append(",")
+                    .append(MCheckinData.COL_USER_ID).append(",")
                     .append(MCheckinData.COL_LOCATION_ID).append(",")
                     .append(MCheckinData.COL_ENTRY_TIME).append(",")
                     .append(MCheckinData.COL_EXIT_TIME)
@@ -54,7 +52,7 @@ public class CheckinManager extends ManagerBase {
         }
         
         synchronized(mInsertCheckin) {
-            bindField(mInsertCheckin, account_id, checkin.accountId);
+            bindField(mInsertCheckin, user_id, checkin.userId);
             bindField(mInsertCheckin, location_id, checkin.locationId);
             bindField(mInsertCheckin, entry_time, checkin.entryTime);
             bindField(mInsertCheckin, exit_time, checkin.exitTime);

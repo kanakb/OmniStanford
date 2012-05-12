@@ -31,7 +31,7 @@
 		        <action android:name="mobisocial.intent.action.DATA_RECEIVED"/>
 		    </intent-filter>
 		</receiver>
-        <service android:name=".service.RequestHandler"></service>
+        <service android:name=".server.service.RequestHandler"></service>
     </application>
 
 </manifest>

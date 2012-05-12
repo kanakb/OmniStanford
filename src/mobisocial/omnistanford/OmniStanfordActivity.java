@@ -99,6 +99,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 	    		JSONObject from = new JSONObject();
 	    		from.put("name", "Steve Fan");
 	    		from.put("principal", "wjruoxue@gmail.com");
+	    		from.put("type", "com.google");
 
 	    		JSONObject payload = new JSONObject();
 	    		payload.put("lon", 111.11);
