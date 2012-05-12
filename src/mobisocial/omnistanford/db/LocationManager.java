@@ -33,7 +33,6 @@ public class LocationManager extends ManagerBase {
         MLocation.COL_MAX_LON
     };
 
-    @SuppressWarnings("unused")
     private SQLiteStatement mUpdateLocation;
     private SQLiteStatement mInsertLocation;
     
@@ -77,6 +76,50 @@ public class LocationManager extends ManagerBase {
         }
     }
     
+    public void updateLocation(MLocation location) {
+        SQLiteDatabase db = initializeDatabase();
+        if (mUpdateLocation == null) {
+            synchronized(this) {
+                StringBuilder sql = new StringBuilder("UPDATE ")
+                    .append(MLocation.TABLE)
+                    .append(" SET ")
+                    .append(MLocation.COL_NAME).append("=?,")
+                    .append(MLocation.COL_PRINCIPAL).append("=?,")
+                    .append(MLocation.COL_ACCOUNT_TYPE).append("=?,")
+                    .append(MLocation.COL_TYPE).append("=?,")
+                    .append(MLocation.COL_MIN_LAT).append("=?,")
+                    .append(MLocation.COL_MAX_LAT).append("=?,")
+                    .append(MLocation.COL_MIN_LON).append("=?,")
+                    .append(MLocation.COL_MAX_LON).append("=?")
+                    .append(" WHERE ").append(MLocation.COL_ID).append("=?");
+                mUpdateLocation = db.compileStatement(sql.toString());
+            }
+            
+            synchronized(mUpdateLocation) {
+                bindField(mUpdateLocation, name, location.name);
+                bindField(mUpdateLocation, principal, location.principal);
+                bindField(mUpdateLocation, accountType, location.accountType);
+                bindField(mUpdateLocation, type, location.type);
+                bindField(mUpdateLocation, minLat, location.minLatitude);
+                bindField(mUpdateLocation, maxLat, location.maxLatitude);
+                bindField(mUpdateLocation, minLon, location.minLongitude);
+                bindField(mUpdateLocation, maxLon, location.maxLongitude);
+                bindField(mUpdateLocation, 9, location.id);
+                mUpdateLocation.execute();
+            }
+        }
+    }
+    
+    public void ensureLocation(MLocation location) {
+        MLocation existing = getLocation(location.name, location.type);
+        if (existing != null) {
+            location.id = existing.id;
+            updateLocation(location);
+        } else {
+            insertLocation(location);
+        }
+    }
+    
     public List<MLocation> getLocations(String type) {
         SQLiteDatabase db = initializeDatabase();
         String table = MLocation.TABLE;
@@ -89,6 +132,24 @@ public class LocationManager extends ManagerBase {
                 result.add(fillInStandardFields(c));
             }
             return result;
+        } finally {
+            c.close();
+        }
+    }
+    
+    public MLocation getLocation(String name, String type) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_NAME + "=? AND " +
+                MLocation.COL_TYPE + "=?";
+        String[] selectionArgs = new String[] { name, type };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
         } finally {
             c.close();
         }

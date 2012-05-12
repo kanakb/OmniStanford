@@ -13,17 +13,17 @@ public class Util {
 	
 	public static String getPickedAccountType(Context context) {
 		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, 0);
-		return settings.getString("account_type", "");
+		return settings.getString("account_type", null);
 	}
 	
 	public static String getPickedAccountName(Context context) {
 		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, 0);
-		return settings.getString("account_name", "");
+		return settings.getString("account_name", null);
 	}
 	
 	public static String getPickedAccountPrincipalHash(Context context) {
 		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, 0);
-		return settings.getString("account_hash", "");
+		return settings.getString("account_hash", null);
 	}
 	
 	public static void setPickedAccount(Context context, String name, String type, String hash) {

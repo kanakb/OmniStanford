@@ -6,16 +6,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import mobisocial.omnistanford.db.DatabaseHelper;
-import mobisocial.omnistanford.db.LocationManager;
-import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.service.RequestHandler;
-import mobisocial.socialkit.Obj;
-import mobisocial.socialkit.musubi.DbFeed;
-import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.obj.MemObj;
@@ -38,6 +30,7 @@ public class MessageReceiver extends BroadcastReceiver {
         }
 
         Musubi musubi = Musubi.forIntent(context, intent);
+        @SuppressWarnings("unused")
         DbObj obj = musubi.objForUri(objUri);
         if (obj.getSender().isOwned()) {
             return;
