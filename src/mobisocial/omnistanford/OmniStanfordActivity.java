@@ -16,6 +16,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import mobisocial.omnistanford.service.LocationService;
+import mobisocial.omnistanford.util.Request;
 import mobisocial.socialkit.Obj;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
@@ -94,27 +95,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 	    		Log.d(TAG, "ID: " + member.getId() + " Name: " + member.getName());
 	    	}
 
-	    	JSONObject request = new JSONObject();
-	    	try {
-	    		JSONObject from = new JSONObject();
-	    		from.put("name", "Steve Fan");
-	    		from.put("principal", "wjruoxue@gmail.com");
-	    		from.put("type", "com.google");
+	    	Request req = new Request("register");
+	    	req.addParam("lon", "1").addParam("lat", "2");
 
-	    		JSONObject payload = new JSONObject();
-	    		payload.put("lon", 111.11);
-	    		payload.put("lat", 99.99);
-
-	    		request.put("from", from);
-	    		request.put("payload", payload);
-	    		request.put("route", "checkin");
-
-	    	} catch (JSONException e) {
-	    		Log.e(TAG, "JSON parse error", e);
-	    		return;
-	    	}
-
-	    	feed.insert(new MemObj("omnistanford", request));
+	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
 	    	Log.d(TAG, feed.getLatestObj().getJson().toString());
 		}
     };
