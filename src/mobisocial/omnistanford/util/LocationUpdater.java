@@ -40,12 +40,12 @@ public class LocationUpdater {
                 MLocation loc = new MLocation();
                 loc.name = obj.getString("name");
                 loc.principal = obj.getString("principal");
-                loc.accountType = obj.getString("account_type");
+                loc.accountType = obj.getString("accountType");
                 loc.type = obj.getString("type");
-                loc.minLatitude = (float) obj.getDouble("min_latitude");
-                loc.maxLatitude = (float) obj.getDouble("max_latitude");
-                loc.minLongitude = (float) obj.getDouble("min_longitude");
-                loc.maxLongitude = (float) obj.getDouble("max_longitude");
+                loc.minLatitude = (float) obj.getDouble("minLatitude");
+                loc.maxLatitude = (float) obj.getDouble("maxLatitude");
+                loc.minLongitude = (float) obj.getDouble("minLongitude");
+                loc.maxLongitude = (float) obj.getDouble("maxLongitude");
                 mLm.ensureLocation(loc);
             } catch (JSONException e) {
                 Log.e(TAG, "Error parsing JSON object");
