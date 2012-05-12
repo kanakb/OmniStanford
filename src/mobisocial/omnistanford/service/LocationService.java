@@ -1,5 +1,18 @@
 package mobisocial.omnistanford.service;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import mobisocial.omnistanford.OmniStanfordBaseActivity;
+import mobisocial.omnistanford.db.DatabaseHelper;
+import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.util.LocationUpdater;
+import mobisocial.omnistanford.util.Util;
+import mobisocial.socialkit.musubi.DbFeed;
+import mobisocial.socialkit.musubi.Musubi;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -9,12 +22,24 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.util.Base64;
 import android.util.Log;
 
 public class LocationService extends Service {
 	public static final String TAG = "LocationService";
 	
+	private static final String ACTION_CREATE_STANFORD_FEED =
+	        "musubi.intent.action.CREATE_STANFORD_FEED";
+	private static final int REQUEST_CREATE_FEED = 1;
+	private static final String EXTRA_NAME = "mobisocial.omnistanford.json";
+	
+	private static final long INTERVAL = 1000 * 60 * 10;
+	
 	private LocationManager mLocationManager;
+	private mobisocial.omnistanford.db.LocationManager mLm =
+	        new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
+	
 	private final IBinder mBinder = new LocationBinder();
 	
 	public class LocationBinder extends Binder {
@@ -23,16 +48,58 @@ public class LocationService extends Service {
 		}
 	}
 	
+	private void setLocationState() {
+	    Location last = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+	    if (last != null) {
+    	    double latitude = last.getLatitude();
+    	    double longitude = last.getLongitude();
+    	    
+    	    Log.d(TAG, "Location: (" + latitude + ", " + longitude + ")");
+    	    
+    	    // Use fine locations if at Stanford
+    	    if (latitude < 37.446 && latitude > 37.415 && longitude < -122.148 && longitude > -122.1926) {
+    	        Log.d(TAG, "At Stanford");
+    	        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+    	    } else {
+    	        mLocationManager.removeUpdates(mLocationListener);
+    	        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+    	    }
+	    }
+	}
+	
 	@Override
 	public void onCreate() {
-		mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        //mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
-        //mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+	    Log.d(TAG, "onCreate called");
+	    mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+	    mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
+	    AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
+        long currentElapsedTime = SystemClock.elapsedRealtime();
+        
+	    Intent locationUpdateIntent = new Intent(this, LocationService.class);
+	    locationUpdateIntent.putExtra("locationUpdate", true);
+	    PendingIntent locationSender = PendingIntent.getService(this, 0, locationUpdateIntent, 0);
+	    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
+	            INTERVAL, locationSender);
+	    setLocationState();
+	    
+	    Intent locationFetchIntent = new Intent(this, LocationService.class);
+	    locationFetchIntent.putExtra("locationFetch", true);
+	    PendingIntent fetchSender = PendingIntent.getService(this, 0, locationFetchIntent, 0);
+	    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
+	            AlarmManager.INTERVAL_DAY, fetchSender);
+        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+        new LocationUpdater(mLm).update();
 	}
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
+		// Need to update list of known locations periodically
+		if (intent.hasExtra("locationFetch")) {
+		    new LocationUpdater(mLm).update();
+		} else if (intent.hasExtra("locationUpdate")) {
+		    setLocationState();
+		}
 		return START_STICKY;
 	}
 	
@@ -44,6 +111,35 @@ public class LocationService extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		return mBinder;
+	}
+	
+	public void postToLocationFeed(MLocation location) {
+	    if (location.feedUri == null) {
+	        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
+	        JSONObject primary = new JSONObject();
+	        JSONArray arr = new JSONArray();
+	        JSONObject one = new JSONObject();
+	        try {
+	            primary.put("visible", false);
+	            one.put("hashed", Base64.encodeToString(
+	                    OmniStanfordBaseActivity.digestPrincipal("arrillaga.stanford@gmail.com"),
+	                    Base64.DEFAULT));
+	            one.put("name", "Arrillaga Family Dining Commons");
+	            one.put("type", location.accountType);
+	            arr.put(0, one);
+	            primary.put("members", arr);
+	            primary.put("sender", Util.getPickedAccountType(this));
+	        } catch (JSONException e) {
+	            Log.e(TAG, "JSON parse error", e);
+	            return;
+	        }
+
+	        Log.d(TAG, arr.toString());
+	        create.putExtra(EXTRA_NAME, primary.toString());
+	        startActivityForResult(create, REQUEST_CREATE_FEED);
+	    }
+	    Musubi musubi = Musubi.getInstance(this);
+	    DbFeed feed = musubi.getFeed(location.feedUri);
 	}
 	
 	LocationListener mLocationListener = new LocationListener() {
@@ -110,12 +206,21 @@ public class LocationService extends Service {
 			Log.i(TAG, "received location + " + location.toString());
 			if (isBetterLocation(location, mCurrent)) {
 			    mCurrent = location;
+			    MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
+			    if (match != null) {
+			        Log.d(TAG, "Found " + match.name);
+			    }
 			}
 		}
 
 		@Override
 		public void onProviderDisabled(String provider) {
-			Log.i(TAG, "provider disabled");
+			Log.i(TAG, "provider disabled: " + provider);
+			if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
+			    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+			} else if (provider.equals(LocationManager.GPS_PROVIDER)) {
+                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+            }
 		}
 
 		@Override

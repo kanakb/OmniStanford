@@ -30,27 +30,34 @@ public class LocationUpdater {
     }
     
     public void update() {
-        JSONArray locations = sendRequest();
-        if (locations == null) {
-            return;
-        }
-        for (int i = 0; i < locations.length(); i++) {
-            try {
-                JSONObject obj = locations.getJSONObject(i);
-                MLocation loc = new MLocation();
-                loc.name = obj.getString("name");
-                loc.principal = obj.getString("principal");
-                loc.accountType = obj.getString("accountType");
-                loc.type = obj.getString("type");
-                loc.minLatitude = (float) obj.getDouble("minLatitude");
-                loc.maxLatitude = (float) obj.getDouble("maxLatitude");
-                loc.minLongitude = (float) obj.getDouble("minLongitude");
-                loc.maxLongitude = (float) obj.getDouble("maxLongitude");
-                mLm.ensureLocation(loc);
-            } catch (JSONException e) {
-                Log.e(TAG, "Error parsing JSON object");
+        new Thread() {
+            @Override
+            public void run() {
+                JSONArray locations = sendRequest();
+                if (locations == null) {
+                    return;
+                }
+                for (int i = 0; i < locations.length(); i++) {
+                    try {
+                        JSONObject obj = locations.getJSONObject(i);
+                        MLocation loc = new MLocation();
+                        loc.name = obj.getString("name");
+                        loc.principal = obj.getString("principal");
+                        loc.accountType = obj.getString("accountType");
+                        loc.type = obj.getString("type");
+                        loc.minLatitude = obj.getDouble("minLatitude");
+                        loc.maxLatitude = obj.getDouble("maxLatitude");
+                        loc.minLongitude = obj.getDouble("minLongitude");
+                        loc.maxLongitude = obj.getDouble("maxLongitude");
+                        if (loc.principal != null) {
+                            mLm.ensureLocation(loc);
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing JSON object");
+                    }
+                }
             }
-        }
+        }.start();
     }
     
     private static JSONArray sendRequest() {

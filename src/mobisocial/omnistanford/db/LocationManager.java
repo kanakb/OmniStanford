@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.net.Uri;
 
 public class LocationManager extends ManagerBase {
     public static final String TAG = "LocationManager";
@@ -20,6 +21,7 @@ public class LocationManager extends ManagerBase {
     private static final int maxLat = 6;
     private static final int minLon = 7;
     private static final int maxLon = 8;
+    private static final int feedUri = 9;
     
     private static final String[] STANDARD_FIELDS = new String[] {
         MLocation.COL_ID,
@@ -30,7 +32,8 @@ public class LocationManager extends ManagerBase {
         MLocation.COL_MIN_LAT,
         MLocation.COL_MAX_LAT,
         MLocation.COL_MIN_LON,
-        MLocation.COL_MAX_LON
+        MLocation.COL_MAX_LON,
+        MLocation.COL_FEED_URI
     };
 
     private SQLiteStatement mUpdateLocation;
@@ -57,8 +60,9 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_MIN_LAT).append(",")
                     .append(MLocation.COL_MAX_LAT).append(",")
                     .append(MLocation.COL_MIN_LON).append(",")
-                    .append(MLocation.COL_MAX_LON)
-                    .append(") VALUES (?,?,?,?,?,?,?,?)");
+                    .append(MLocation.COL_MAX_LON).append(",")
+                    .append(MLocation.COL_FEED_URI)
+                    .append(") VALUES (?,?,?,?,?,?,?,?,?)");
                 mInsertLocation = db.compileStatement(sql.toString());
             }
         }
@@ -72,6 +76,11 @@ public class LocationManager extends ManagerBase {
             bindField(mInsertLocation, maxLat, location.maxLatitude);
             bindField(mInsertLocation, minLon, location.minLongitude);
             bindField(mInsertLocation, maxLon, location.maxLongitude);
+            if (location.feedUri == null) {
+                bindField(mUpdateLocation, feedUri, null);
+            } else {
+                bindField(mUpdateLocation, feedUri, location.feedUri.toString());
+            }
             location.id = mInsertLocation.executeInsert();
         }
     }
@@ -90,7 +99,8 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_MIN_LAT).append("=?,")
                     .append(MLocation.COL_MAX_LAT).append("=?,")
                     .append(MLocation.COL_MIN_LON).append("=?,")
-                    .append(MLocation.COL_MAX_LON).append("=?")
+                    .append(MLocation.COL_MAX_LON).append("=?,")
+                    .append(MLocation.COL_FEED_URI).append("=?")
                     .append(" WHERE ").append(MLocation.COL_ID).append("=?");
                 mUpdateLocation = db.compileStatement(sql.toString());
             }
@@ -104,7 +114,12 @@ public class LocationManager extends ManagerBase {
                 bindField(mUpdateLocation, maxLat, location.maxLatitude);
                 bindField(mUpdateLocation, minLon, location.minLongitude);
                 bindField(mUpdateLocation, maxLon, location.maxLongitude);
-                bindField(mUpdateLocation, 9, location.id);
+                if (location.feedUri == null) {
+                    bindField(mUpdateLocation, feedUri, null);
+                } else {
+                    bindField(mUpdateLocation, feedUri, location.feedUri.toString());
+                }
+                bindField(mUpdateLocation, 10, location.id);
                 mUpdateLocation.execute();
             }
         }
@@ -155,6 +170,28 @@ public class LocationManager extends ManagerBase {
         }
     }
     
+    public MLocation getLocation(double latitude, double longitude) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_MIN_LAT + "<? AND " +
+                MLocation.COL_MAX_LAT + ">? AND " +
+                MLocation.COL_MIN_LON + "<? AND " +
+                MLocation.COL_MAX_LON + ">?";
+        String lat = new Double(latitude).toString();
+        String lon = new Double(longitude).toString();
+        String[] selectionArgs = new String[] { lat, lat, lon, lon };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+    
     private MLocation fillInStandardFields(Cursor c) {
         MLocation loc = new MLocation();
         loc.id = c.getLong(_id);
@@ -163,15 +200,20 @@ public class LocationManager extends ManagerBase {
         loc.accountType = c.getString(accountType);
         loc.type = c.getString(type);
         try {
-            loc.minLatitude = c.getFloat(minLat);
-            loc.maxLatitude = c.getFloat(maxLat);
-            loc.minLongitude = c.getFloat(minLon);
-            loc.maxLongitude = c.getFloat(maxLon);
+            loc.minLatitude = c.getDouble(minLat);
+            loc.maxLatitude = c.getDouble(maxLat);
+            loc.minLongitude = c.getDouble(minLon);
+            loc.maxLongitude = c.getDouble(maxLon);
         } catch (Exception e) {
             loc.minLatitude = null;
             loc.maxLatitude = null;
             loc.minLongitude = null;
             loc.maxLongitude = null;
+        }
+        if (c.getString(feedUri) != null) {
+            loc.feedUri = Uri.parse(c.getString(feedUri));
+        } else {
+            loc.feedUri = null;
         }
         return loc;
     }

@@ -1,5 +1,7 @@
 package mobisocial.omnistanford.db;
 
+import android.net.Uri;
+
 /**
  * A class to track properties of a location
  */
@@ -32,6 +34,11 @@ public class MLocation {
     public static final String COL_ACCOUNT_TYPE = "account_type";
     
     /**
+     * Feed associated with this user and the location
+     */
+    public static final String COL_FEED_URI = "feed_uri";
+    
+    /**
      * Bounding box for location (optional)
      */
     public static final String COL_MIN_LAT = "min_latitude";
@@ -44,8 +51,9 @@ public class MLocation {
     public String type;
     public String principal;
     public String accountType;
-    public Float minLatitude;
-    public Float maxLatitude;
-    public Float minLongitude;
-    public Float maxLongitude;
+    public Double minLatitude;
+    public Double maxLatitude;
+    public Double minLongitude;
+    public Double maxLongitude;
+    public Uri feedUri;
 }

@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TAG = "DatabaseHelper";
     
     private static final String DB_NAME = "OmniStanford.db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
@@ -51,13 +51,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 MLocation.COL_MIN_LAT, "REAL",
                 MLocation.COL_MAX_LAT, "REAL",
                 MLocation.COL_MIN_LON, "REAL",
-                MLocation.COL_MAX_LON, "REAL");
+                MLocation.COL_MAX_LON, "REAL",
+                MLocation.COL_FEED_URI, "TEXT");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion >= newVersion) {
             return;
+        }
+        if (oldVersion <= 1) {
+            db.execSQL("ALTER TABLE " + MLocation.TABLE +
+                    " ADD COLUMN " + MLocation.COL_FEED_URI + " TEXT;");
         }
         db.setVersion(VERSION);
     }
