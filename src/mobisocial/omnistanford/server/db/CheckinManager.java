@@ -1,7 +1,11 @@
 package mobisocial.omnistanford.server.db;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import mobisocial.omnistanford.db.ManagerBase;
 
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
@@ -61,5 +65,31 @@ public class CheckinManager extends ManagerBase {
             bindField(mInsertCheckin, exit_time, checkin.exitTime);
             checkin.id = mInsertCheckin.executeInsert();
         }
+    }
+    
+    public List<MCheckinData> findOpenCheckinAt(long locationId) {
+    	SQLiteDatabase db = initializeDatabase();
+        String table = MCheckinData.TABLE;
+        String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +
+        			MCheckinData.COL_EXIT_TIME + " IS NULL";
+        String[] selectionArgs = new String[] { String.valueOf(locationId) };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+    	List<MCheckinData> checkins = new ArrayList<MCheckinData>(c.getCount());
+        try {
+            while (c.moveToNext()) {
+                checkins.add(fillInStandardFields(c));
+            } 
+        } finally {
+            c.close();
+        }
+        
+        return checkins;
+    }
+    
+    private MCheckinData fillInStandardFields(Cursor c) {
+    	MCheckinData checkin = new MCheckinData(c.getLong(user_id), c.getLong(location_id),
+    			c.getLong(entry_time), c.getLong(exit_time));
+    	checkin.id = c.getLong(_id);
+    	return checkin;
     }
 }

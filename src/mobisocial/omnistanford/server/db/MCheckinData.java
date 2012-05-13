@@ -6,6 +6,13 @@ package mobisocial.omnistanford.server.db;
 public class MCheckinData {
     public static final String TABLE = "checkins";
     
+    public MCheckinData(Long userid, Long locationid, Long entrytime, Long exittime) {
+    	userId = userid;
+    	locationId = locationid;
+    	entryTime = entrytime;
+    	exitTime = exittime;
+    }
+    
     /**
      * Primary identifier
      */

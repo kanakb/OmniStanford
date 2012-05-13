@@ -2,6 +2,8 @@ package mobisocial.omnistanford.server.service;
 
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import mobisocial.omnistanford.App;
@@ -13,9 +15,11 @@ import mobisocial.omnistanford.server.db.MProfile;
 import mobisocial.omnistanford.server.db.MUser;
 import mobisocial.omnistanford.server.db.ProfileManager;
 import mobisocial.omnistanford.server.db.UserManager;
+import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.obj.MemObj;
 import android.app.IntentService;
 import android.content.Intent;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -45,13 +49,14 @@ public class RequestHandler extends IntentService {
 			Uri objUri = intent.getParcelableExtra("objUri");
 			Musubi musubi = Musubi.forIntent(this, intent);
 			DbObj obj = musubi.objForUri(objUri);
+			DbFeed feed = obj.getContainingFeed();
 			JSONObject request = obj.getJson();
-			long requesterLocalId = obj.getContainingFeed().getMembers().get(0).getLocalId();
+			long requesterLocalId = feed.getMembers().get(0).getLocalId();
 			if(request.has("from") && request.has("route")) {
 				String route = request.optString("route");
 				
 				if(route.equals("checkin")) {
-					onCheckin(requesterLocalId, request);
+					onCheckin(requesterLocalId, request, feed);
 				} else if(route.equals("register")) {
 					onRegister(requesterLocalId, request);
 				}
@@ -59,7 +64,7 @@ public class RequestHandler extends IntentService {
 		}
 	}
 	
-	void onCheckin(long localUserId, JSONObject req) {
+	void onCheckin(long localUserId, JSONObject req, DbFeed feed) {
 		JSONObject from = req.optJSONObject("from");
 		JSONObject payload = req.optJSONObject("payload");
 		if(payload != null) {
@@ -77,14 +82,27 @@ public class RequestHandler extends IntentService {
 				return;
 			}
 			
-			MCheckinData checkin = new MCheckinData();
-			checkin.userId = user.id;
-			checkin.locationId = location.id;
-			checkin.entryTime = System.currentTimeMillis();
-			checkin.exitTime = Long.MAX_VALUE;
+			MCheckinData checkin = new MCheckinData(user.id, 
+					location.id, System.currentTimeMillis(), null);
 			CheckinManager cm = new CheckinManager(mServerDBHelper);
 			cm.insertCheckin(checkin);
 			Log.i(TAG, "new checkin inserted");
+			
+			List<MCheckinData> checkins = cm.findOpenCheckinAt(location.id);
+			JSONObject res = new JSONObject();
+			try {
+				JSONArray arr = new JSONArray();
+				for(MCheckinData c : checkins) {
+					JSONObject o = new JSONObject();
+					o.put("location_id", c.locationId);
+					o.put("user_id", c.userId);
+					arr.put(o);
+				}
+				res.put("res", arr);
+			} catch(JSONException e) {
+				Log.i(TAG, e.toString());
+			}
+			feed.insert(new MemObj("omnistanford", res));
 		}
 	}
 	
