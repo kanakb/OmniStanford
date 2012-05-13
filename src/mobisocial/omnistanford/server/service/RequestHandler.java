@@ -9,7 +9,9 @@ import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.server.db.CheckinManager;
 import mobisocial.omnistanford.server.db.MCheckinData;
+import mobisocial.omnistanford.server.db.MProfile;
 import mobisocial.omnistanford.server.db.MUser;
+import mobisocial.omnistanford.server.db.ProfileManager;
 import mobisocial.omnistanford.server.db.UserManager;
 import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
@@ -68,10 +70,11 @@ public class RequestHandler extends IntentService {
 			LocationManager lm = new LocationManager(mDBHelper);
 			MLocation location = lm.getLocations("Dining Hall").get(0);
 			UserManager um = new UserManager(mServerDBHelper);
-			MUser user = um.getAccount(from.optString("name"), 
+			MUser user = um.getUser(from.optString("name"), 
 					from.optString("type"), from.optString("principal"));
 			if(user == null) {
 				// TODO: user not found, error response
+				return;
 			}
 			
 			MCheckinData checkin = new MCheckinData();
@@ -85,8 +88,10 @@ public class RequestHandler extends IntentService {
 		}
 	}
 	
+	
 	void onRegister(long localUserId, JSONObject req) {
 		JSONObject from = req.optJSONObject("from");
+		JSONObject payload = req.optJSONObject("payload");
 		String name = from.optString("name");
 		String type = from.optString("type");
 		String hash = from.optString("principal");
@@ -94,8 +99,18 @@ public class RequestHandler extends IntentService {
 		if(!name.equals("") && !type.equals("") && !hash.equals("")) {
 			UserManager um = new UserManager(mServerDBHelper);
 			MUser newUser = new MUser(localUserId, name, type, hash);
-			um.insertAccount(newUser);
+			// TODO: ensure only one user
+			um.insertUser(newUser);
 			Log.i(TAG, "new user registered: " + name);
+			
+			MProfile profile = new MProfile();
+			profile.userId = newUser.id;
+			profile.dorm = payload.optString("dorm");
+			profile.department = payload.optString("department");
+			ProfileManager pm = new ProfileManager(mServerDBHelper);
+			pm.insertProfile(profile);
+			Log.i(TAG, "new profile inserted "
+					+ profile.dorm + " " + profile.department);
 		}
 	}
 

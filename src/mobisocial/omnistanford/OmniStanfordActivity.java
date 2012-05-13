@@ -45,9 +45,15 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         super.onCreate(savedInstanceState);
         
         LinearLayout layout = (LinearLayout) findViewById(R.id.contentArea);
-        Button button = new Button(this);
-        button.setOnClickListener(mCheckinClickListener);
-        layout.addView(button);
+        Button registerButton = new Button(this);
+        registerButton.setText("Reigster");
+        registerButton.setOnClickListener(mRegisterClickListener);
+        layout.addView(registerButton);
+        
+        Button checkinButton = new Button(this);
+        checkinButton.setText("Checkin");
+        checkinButton.setOnClickListener(mCheckinClickListener);
+        layout.addView(checkinButton);
         
         if (!Musubi.isMusubiInstalled(this)) {
             return;
@@ -65,16 +71,20 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 		@Override
 		public void onClick(View v) {
 			DbFeed feed = mMusubi.getFeed();
-	    	DbIdentity me = feed.getLocalUser();
-	    	List<DbIdentity> members = feed.getMembers();
-	    	Log.d(TAG, "My ID: " + me.getId() + " Name: " + me.getName());
-	    	for (DbIdentity member : members) {
-	    		Log.d(TAG, "ID: " + member.getId() + " Name: " + member.getName());
-	    	}
-
-	    	Request req = new Request("register");
+	    	Request req = new Request("checkin");
 	    	req.addParam("lon", "1").addParam("lat", "2");
-
+	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
+	    	Log.d(TAG, feed.getLatestObj().getJson().toString());
+		}
+    };
+    
+    private OnClickListener mRegisterClickListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			DbFeed feed = mMusubi.getFeed();
+	    	Request req = new Request("register");
+	    	req.addParam("dorm", "McFarland")
+	    		.addParam("department", "Computer Science");
 	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
 	    	Log.d(TAG, feed.getLatestObj().getJson().toString());
 		}

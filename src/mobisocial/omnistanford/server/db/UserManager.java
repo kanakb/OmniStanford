@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
 /**
- * Manage owned accounts in this database
+ * Manage users in this database
  */
 
 public class UserManager extends ManagerBase {
@@ -38,7 +38,7 @@ public class UserManager extends ManagerBase {
         super(db);
     }
     
-    public void insertAccount(MUser user) {
+    public void insertUser(MUser user) {
         SQLiteDatabase db = initializeDatabase();
         if (mInsertUser == null) {
             synchronized(this) {
@@ -62,7 +62,7 @@ public class UserManager extends ManagerBase {
         }
     }
     
-    public MUser getAccount(String accountName, String accountType, String hashed) {
+    public MUser getUser(String accountName, String accountType, String hashed) {
         SQLiteDatabase db = initializeDatabase();
         String table = MUser.TABLE;
         String selection = MUser.COL_NAME + "=? AND " +

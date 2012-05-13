@@ -9,7 +9,7 @@ public class ServerDatabaseHelper extends SQLiteOpenHelper {
     public static final String TAG = "ServerDatabaseHelper";
     
     private static final String DB_NAME = "OmniStanford_Server.db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     
     public ServerDatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
@@ -30,13 +30,19 @@ public class ServerDatabaseHelper extends SQLiteOpenHelper {
                 MCheckinData.COL_EXIT_TIME, "INTEGER",
                 MCheckinData.COL_LOCATION_ID, "INTEGER NOT NULL",
                 MCheckinData.COL_USER_ID, "INTEGER NOT NULL");
-        
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion >= newVersion) {
             return;
+        }
+        if(oldVersion <= 1) {
+        	createTable(db, MProfile.TABLE,
+        			MProfile.COL_ID, "INTEGER PRIMARY KEY",
+        			MProfile.COL_USER_ID, "INTEGER NOT NULL",
+        			MProfile.COL_DORM, "TEXT",
+        			MProfile.COL_DEPARTMENT, "TEXT");
         }
         
         db.setVersion(VERSION);
