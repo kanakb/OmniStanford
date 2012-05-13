@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 
-import mobisocial.omnistanford.service.RequestHandler;
+import mobisocial.omnistanford.server.service.RequestHandler;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
@@ -22,7 +22,7 @@ public class MessageReceiver extends BroadcastReceiver {
 
         Uri objUri = intent.getParcelableExtra("objUri");
         if (objUri == null) {
-            Log.i("WordPlayNotification", "No object found");
+            Log.i(TAG, "No object found");
             return;
         }
 

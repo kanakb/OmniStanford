@@ -18,13 +18,13 @@ public abstract class ManagerBase {
         mDirectDatabase = db;
     }
 
-    SQLiteDatabase initializeDatabase() {
+    protected SQLiteDatabase initializeDatabase() {
         if(mDirectDatabase != null)
             return mDirectDatabase;
         return mDatabase.getWritableDatabase();
     }
 
-    void bindField(SQLiteStatement statement, int field, Object val) {
+    protected void bindField(SQLiteStatement statement, int field, Object val) {
         if (val == null) {
             statement.bindNull(field);
         } else if (val instanceof String) {
