@@ -13,7 +13,6 @@ import android.widget.LinearLayout;
 import mobisocial.omnistanford.service.LocationService;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.socialkit.musubi.DbFeed;
-import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.obj.MemObj;
 
