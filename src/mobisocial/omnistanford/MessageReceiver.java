@@ -1,7 +1,5 @@
 package mobisocial.omnistanford;
 
-import java.util.List;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +8,6 @@ import android.content.Intent;
 import mobisocial.omnistanford.service.RequestHandler;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.obj.MemObj;
 import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,7 +27,6 @@ public class MessageReceiver extends BroadcastReceiver {
         }
 
         Musubi musubi = Musubi.forIntent(context, intent);
-        @SuppressWarnings("unused")
         DbObj obj = musubi.objForUri(objUri);
         if (obj.getSender().isOwned()) {
             return;

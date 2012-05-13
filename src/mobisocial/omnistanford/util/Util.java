@@ -39,13 +39,11 @@ public class Util {
 	public static void saveAccount(Context context, 
 			String name, String hash, String type) {
 		AccountManager am = new AccountManager(App.getDatabaseSource(context));
-		if(am.getAccounts(type).size() == 0) {
-			MAccount account = new MAccount();
-			account.name = name;
-			account.identifier = hash;
-			account.type = type;
-			am.insertAccount(account);
-		}
+		MAccount account = new MAccount();
+		account.name = name;
+		account.identifier = hash;
+		account.type = type;
+		am.ensureAccount(account);
 	}
 	
 	public static MAccount loadAccount(Context context) {

@@ -31,7 +31,7 @@ public class LocationService extends Service {
 	
 	private static final String ACTION_CREATE_STANFORD_FEED =
 	        "musubi.intent.action.CREATE_STANFORD_FEED";
-	private static final int REQUEST_CREATE_FEED = 1;
+	//private static final int REQUEST_CREATE_FEED = 1;
 	private static final String EXTRA_NAME = "mobisocial.omnistanford.json";
 	
 	private static final long INTERVAL = 1000 * 60 * 10;
@@ -95,10 +95,12 @@ public class LocationService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
 		// Need to update list of known locations periodically
-		if (intent.hasExtra("locationFetch")) {
-		    new LocationUpdater(mLm).update();
-		} else if (intent.hasExtra("locationUpdate")) {
-		    setLocationState();
+		if (intent != null) {
+    		if (intent.hasExtra("locationFetch")) {
+    		    new LocationUpdater(mLm).update();
+    		} else if (intent.hasExtra("locationUpdate")) {
+    		    setLocationState();
+    		}
 		}
 		return START_STICKY;
 	}
@@ -136,10 +138,13 @@ public class LocationService extends Service {
 
 	        Log.d(TAG, arr.toString());
 	        create.putExtra(EXTRA_NAME, primary.toString());
-	        startActivityForResult(create, REQUEST_CREATE_FEED);
+	        //startActivityForResult(create, REQUEST_CREATE_FEED);
 	    }
-	    Musubi musubi = Musubi.getInstance(this);
-	    DbFeed feed = musubi.getFeed(location.feedUri);
+	    if (location.feedUri != null) {
+    	    Musubi musubi = Musubi.getInstance(this);
+    	    @SuppressWarnings("unused")
+            DbFeed feed = musubi.getFeed(location.feedUri);
+	    }
 	}
 	
 	LocationListener mLocationListener = new LocationListener() {

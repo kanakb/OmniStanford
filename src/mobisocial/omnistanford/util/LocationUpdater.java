@@ -33,31 +33,37 @@ public class LocationUpdater {
         new Thread() {
             @Override
             public void run() {
-                JSONArray locations = sendRequest();
-                if (locations == null) {
-                    return;
-                }
-                for (int i = 0; i < locations.length(); i++) {
-                    try {
-                        JSONObject obj = locations.getJSONObject(i);
-                        MLocation loc = new MLocation();
-                        loc.name = obj.getString("name");
-                        loc.principal = obj.getString("principal");
-                        loc.accountType = obj.getString("accountType");
-                        loc.type = obj.getString("type");
-                        loc.minLatitude = obj.getDouble("minLatitude");
-                        loc.maxLatitude = obj.getDouble("maxLatitude");
-                        loc.minLongitude = obj.getDouble("minLongitude");
-                        loc.maxLongitude = obj.getDouble("maxLongitude");
-                        if (loc.principal != null) {
-                            mLm.ensureLocation(loc);
-                        }
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error parsing JSON object");
-                    }
-                }
+                syncUpdate();
             }
         }.start();
+    }
+    
+    // Don't call this from the main thread
+    public void syncUpdate() {
+        JSONArray locations = sendRequest();
+        if (locations == null) {
+            return;
+        }
+        for (int i = 0; i < locations.length(); i++) {
+            try {
+                JSONObject obj = locations.getJSONObject(i);
+                MLocation loc = new MLocation();
+                loc.name = obj.getString("name");
+                loc.principal = obj.getString("principal");
+                loc.accountType = obj.getString("accountType");
+                loc.type = obj.getString("type");
+                loc.minLatitude = obj.getDouble("minLatitude");
+                loc.maxLatitude = obj.getDouble("maxLatitude");
+                loc.minLongitude = obj.getDouble("minLongitude");
+                loc.maxLongitude = obj.getDouble("maxLongitude");
+                if (loc.principal != null && !loc.principal.equals("null")) {
+                    Log.d(TAG, "principal: " + loc.principal);
+                    mLm.ensureLocation(loc);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "Error parsing JSON object");
+            }
+        }
     }
     
     private static JSONArray sendRequest() {

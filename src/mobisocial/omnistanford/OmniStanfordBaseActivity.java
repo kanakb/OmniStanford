@@ -3,18 +3,22 @@ package mobisocial.omnistanford;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import mobisocial.omnistanford.db.AccountManager;
-import mobisocial.omnistanford.db.DatabaseHelper;
-import mobisocial.omnistanford.db.MAccount;
+import mobisocial.omnistanford.db.LocationManager;
+import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.util.LocationUpdater;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
 import android.app.Activity;
 import android.content.Intent;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
@@ -84,19 +88,13 @@ public class OmniStanfordBaseActivity extends Activity {
                     i = 0;
                 }
 
-                DatabaseHelper helper = new DatabaseHelper(this);
-                AccountManager am = new AccountManager(helper);
                 for (int j = 0; j < names.size(); j++) {
-                    MAccount acc = new MAccount();
-                    acc.name = names.get(j);
-                    acc.type = types.get(j);
-                    acc.identifier = hashes.get(j);
-                    am.ensureAccount(acc);
+                    Util.saveAccount(this, names.get(j), hashes.get(j), types.get(j));
                 }
                 
                 ((TextView)findViewById(R.id.accountPicker)).setText(names.get(i), TextView.BufferType.NORMAL);
                 
-                Util.saveAccount(this, names.get(i), hashes.get(i), types.get(i));
+                Util.setPickedAccount(this, names.get(i), types.get(i), hashes.get(i));
 
                 
                 Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
@@ -119,6 +117,31 @@ public class OmniStanfordBaseActivity extends Activity {
                 Log.d(TAG, arr.toString());
                 create.putExtra(EXTRA_NAME, primary.toString());
                 //startActivityForResult(create, REQUEST_CREATE_FEED);
+                
+                new CreateFeedsTask().execute(App.getDatabaseSource(this));
+            }
+        } else if (requestCode == REQUEST_CREATE_FEED) {
+            if (resultCode == RESULT_OK) {
+                Log.d(TAG, "got a feed start result");
+                Uri feedUri = data.getData();
+                if (feedUri != null) {
+                    // Single feed
+                    Log.d(TAG, "Feed URI: " + feedUri);
+                } else if (data.getStringArrayListExtra("uris") != null 
+                        && data.getStringArrayListExtra("principals") != null) {
+                    // Multiple feeds
+                    ArrayList<String> array = data.getStringArrayListExtra("uris");
+                    ArrayList<String> principals = data.getStringArrayListExtra("principals");
+                    LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+                    for (int i = 0; i < array.size(); i++) {
+                        Log.d(TAG, "Principal: " + principals.get(i));
+                        MLocation loc = lm.getLocation(principals.get(i));
+                        if (loc != null) {
+                            loc.feedUri = Uri.parse(array.get(i));
+                            lm.updateLocation(loc);
+                        }
+                    }
+                }
             }
         }
     }
@@ -140,9 +163,9 @@ public class OmniStanfordBaseActivity extends Activity {
         findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
         findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
         
-        MAccount ac = Util.loadAccount(this);
-        if(ac != null) {
-            ((TextView)findViewById(R.id.accountPicker)).setText(ac.name, TextView.BufferType.NORMAL);
+        String currentName = Util.getPickedAccountName(this);
+        if(currentName != null) {
+            ((TextView)findViewById(R.id.accountPicker)).setText(currentName, TextView.BufferType.NORMAL);
         }
     }
     
@@ -154,6 +177,65 @@ public class OmniStanfordBaseActivity extends Activity {
             return md.digest();
         } catch(NoSuchAlgorithmException e) {
             throw new RuntimeException("Platform doesn't support sha256?!?!", e);
+        }
+    }
+    
+    protected class CreateFeedsTask extends AsyncTask<SQLiteOpenHelper, Void, LocationManager> {
+        @Override
+        protected LocationManager doInBackground(SQLiteOpenHelper... helpers) {
+            // Keeping database update off the main thread
+            LocationManager lm = new LocationManager(helpers[0]);
+            new LocationUpdater(lm).syncUpdate();
+            return lm;
+        }
+        
+        protected void onPostExecute(LocationManager lm) {
+            // Start feeds on Musubi
+            List<MLocation> locations = lm.getLocations();
+            JSONObject toCreate = new JSONObject();
+            JSONArray outerArr = new JSONArray();
+            ArrayList<String> principals = new ArrayList<String>();
+            for (MLocation location : locations) {
+                if (location.feedUri == null) {
+                    JSONObject primary = new JSONObject();
+                    JSONArray arr = new JSONArray();
+                    JSONObject one = new JSONObject();
+                    try {
+                        if (location.principal == null ||
+                                Util.getPickedAccountType(OmniStanfordBaseActivity.this) == null) {
+                            continue;
+                        }
+                        primary.put("visible", false);
+                        one.put("hashed", Base64.encodeToString(
+                                OmniStanfordBaseActivity.digestPrincipal(location.principal),
+                                Base64.DEFAULT));
+                        one.put("name", location.name);
+                        one.put("type", location.accountType);
+                        principals.add(location.principal);
+                        arr.put(0, one);
+                        primary.put("members", arr);
+                        primary.put("sender", Util.getPickedAccountType(OmniStanfordBaseActivity.this));
+                        outerArr.put(primary);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSON parse error", e);
+                        return;
+                    }
+                }
+            }
+            try {
+                toCreate.put("array", outerArr);
+                if (outerArr.length() > 0) {
+                    Intent intent = new Intent(ACTION_CREATE_STANFORD_FEED);
+                    intent.putExtra(EXTRA_NAME, toCreate.toString());
+                    Log.d(TAG, "starting...");
+                    Log.d(TAG, toCreate.toString());
+                    intent.putStringArrayListExtra("principals", principals);
+                    Log.d(TAG, "sent principals: " + principals);
+                    startActivityForResult(intent, REQUEST_CREATE_FEED);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, "JSON error", e);
+            }
         }
     }
 }

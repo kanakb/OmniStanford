@@ -77,9 +77,9 @@ public class LocationManager extends ManagerBase {
             bindField(mInsertLocation, minLon, location.minLongitude);
             bindField(mInsertLocation, maxLon, location.maxLongitude);
             if (location.feedUri == null) {
-                bindField(mUpdateLocation, feedUri, null);
+                bindField(mInsertLocation, feedUri, null);
             } else {
-                bindField(mUpdateLocation, feedUri, location.feedUri.toString());
+                bindField(mInsertLocation, feedUri, location.feedUri.toString());
             }
             location.id = mInsertLocation.executeInsert();
         }
@@ -129,6 +129,9 @@ public class LocationManager extends ManagerBase {
         MLocation existing = getLocation(location.name, location.type);
         if (existing != null) {
             location.id = existing.id;
+            if (location.feedUri == null) {
+                location.feedUri = existing.feedUri;
+            }
             updateLocation(location);
         } else {
             insertLocation(location);
@@ -147,6 +150,38 @@ public class LocationManager extends ManagerBase {
                 result.add(fillInStandardFields(c));
             }
             return result;
+        } finally {
+            c.close();
+        }
+    }
+    
+    public List<MLocation> getLocations() {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        Cursor c = db.query(table, STANDARD_FIELDS, null, null, null, null, null);
+        try {
+            List<MLocation> result = new ArrayList<MLocation>();
+            while (c.moveToNext()) {
+                result.add(fillInStandardFields(c));
+            }
+            return result;
+        } finally {
+            c.close();
+        }
+    }
+    
+    public MLocation getLocation(String principal) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_PRINCIPAL + "=?";
+        String[] selectionArgs = new String[] { principal };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
         } finally {
             c.close();
         }
