@@ -1,16 +1,24 @@
 package mobisocial.omnistanford.service;
 
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import mobisocial.omnistanford.App;
 import mobisocial.omnistanford.OmniStanfordBaseActivity;
+import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.DatabaseHelper;
+import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.util.LocationUpdater;
+import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.obj.MemObj;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -211,9 +219,41 @@ public class LocationService extends Service {
 			Log.i(TAG, "received location + " + location.toString());
 			if (isBetterLocation(location, mCurrent)) {
 			    mCurrent = location;
+                CheckinManager cm = new CheckinManager(App.getDatabaseSource(LocationService.this));
 			    MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
-			    if (match != null) {
+			    if (match != null && match.feedUri != null) {
 			        Log.d(TAG, "Found " + match.name);
+			        MCheckinData data = cm.getRecentCheckin(match.id);
+			        if (data == null) {
+			            data = new MCheckinData();
+			            data.entryTime = System.currentTimeMillis();
+			            data.locationId = match.id;
+			            MAccount acct = Util.loadAccount(LocationService.this);
+			            if (acct != null) {
+			                data.accountId = acct.id;
+			                
+			                // Check in remotely
+			                // TODO: send according to privacy settings
+			                Request request = new Request("checkin");
+                            request.addParam("lat", new Double(mCurrent.getLatitude()).toString());
+                            request.addParam("lon", new Double(mCurrent.getLongitude()).toString());
+			                Musubi musubi = Musubi.getInstance(LocationService.this);
+			                DbFeed feed = musubi.getFeed(match.feedUri);
+			                feed.postObj(new MemObj("omnistanford", request.toJSON(LocationService.this)));
+                            
+                            // Check in locally
+                            cm.insertCheckin(data);
+			            }
+			        }
+			    } else {
+			        // Exit open checkins
+			        List<MCheckinData> checkins = cm.getRecentCheckins();
+			        for (MCheckinData data : checkins) {
+			            if (data.exitTime == null) {
+			                data.exitTime = System.currentTimeMillis();
+			                cm.updateCheckin(data);
+			            }
+			        }
 			    }
 			}
 		}

@@ -12,8 +12,10 @@ import org.json.JSONObject;
 import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.util.LocationUpdater;
+import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.obj.MemObj;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -139,6 +141,12 @@ public class OmniStanfordBaseActivity extends Activity {
                         if (loc != null) {
                             loc.feedUri = Uri.parse(array.get(i));
                             lm.updateLocation(loc);
+                            Request request = new Request("register");
+                            request.addParam("dorm", "Off-Campus");
+                            request.addParam("department", "CS");
+                            Musubi.getInstance(this)
+                                .getFeed(loc.feedUri)
+                                .postObj(new MemObj("omnistanford", request.toJSON(this)));
                         }
                     }
                 }

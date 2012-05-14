@@ -14,7 +14,6 @@ public class CheckinManager extends ManagerBase {
 
     public static final String TAG = "CheckinManager";
     
-    @SuppressWarnings("unused")
     private static final int _id = 0;
 
     private static final int user_id = 1;
@@ -22,7 +21,6 @@ public class CheckinManager extends ManagerBase {
     private static final int entry_time = 3;
     private static final int exit_time = 4;
     
-    @SuppressWarnings("unused")
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
     	MCheckinData.COL_USER_ID,

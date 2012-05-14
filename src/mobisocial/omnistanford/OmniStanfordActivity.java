@@ -3,6 +3,7 @@ package mobisocial.omnistanford;
 import java.util.List;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,6 +11,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+import mobisocial.omnistanford.db.CheckinManager;
+import mobisocial.omnistanford.db.LocationManager;
+import mobisocial.omnistanford.db.MCheckinData;
+import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.service.LocationService;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.socialkit.musubi.DbFeed;
@@ -45,7 +51,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         LinearLayout layout = (LinearLayout) findViewById(R.id.contentArea);
         Button registerButton = new Button(this);
-        registerButton.setText("Reigster");
+        registerButton.setText("Register");
         registerButton.setOnClickListener(mRegisterClickListener);
         layout.addView(registerButton);
         
@@ -59,6 +65,24 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         }
         
         mMusubi = Musubi.getInstance(this);
+
+        TextView tv = new TextView(this);
+        tv.setTextSize(40.0f);
+        tv.setTextColor(Color.GREEN);
+        tv.setText("Not currently checked in.");
+        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+        List<MCheckinData> checkins = cm.getRecentCheckins();
+        for (MCheckinData data : checkins) {
+            if (data.exitTime == null) {
+                LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+                MLocation loc = lm.getLocation(data.locationId);
+                if (loc != null) {
+                    tv.setText("Checked in at " + loc.name);
+                }
+                break;
+            }
+        }
+        layout.addView(tv);
         
         // Do some location updates
         new CreateFeedsTask().execute(App.getDatabaseSource(this));
