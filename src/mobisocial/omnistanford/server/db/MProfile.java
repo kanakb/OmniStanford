@@ -2,6 +2,14 @@ package mobisocial.omnistanford.server.db;
 
 public class MProfile {
 	public static final String TABLE = "profiles";
+	
+	public MProfile() {}
+	
+	public MProfile(Long userId, String dorm, String department) {
+		this.userId = userId;
+		this.dorm = dorm;
+		this.department = department;
+	}
     
     /**
      * Primary identifier
@@ -23,8 +31,8 @@ public class MProfile {
      */
     public static final String COL_DEPARTMENT = "department";
     
-    public long id;
-    public long userId;
+    public Long id;
+    public Long userId;
     public String dorm;
     public String department;
 }

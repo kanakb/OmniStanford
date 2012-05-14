@@ -3,6 +3,7 @@ package mobisocial.omnistanford.server.db;
 import java.util.ArrayList;
 import java.util.List;
 
+import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.db.ManagerBase;
 
 import android.database.Cursor;
@@ -32,6 +33,7 @@ public class UserManager extends ManagerBase {
     };
 
     private SQLiteStatement mInsertUser;
+    private SQLiteStatement mUpdateUser;
     
     public UserManager(SQLiteOpenHelper databaseSource) {
         super(databaseSource);
@@ -62,6 +64,30 @@ public class UserManager extends ManagerBase {
             bindField(mInsertUser, identifier, user.identifier);
             bindField(mInsertUser, name, user.name);
             user.id = mInsertUser.executeInsert();
+        }
+    }
+    
+    public void updateUser(MUser user) {
+        SQLiteDatabase db = initializeDatabase();
+        if (mUpdateUser == null) {
+            synchronized(this) {
+                StringBuilder sql = new StringBuilder("UPDATE ")
+                    .append(MUser.TABLE)
+                    .append(" SET ")
+                    .append(MUser.COL_ACCOUNT_TYPE).append("=?,")
+                    .append(MUser.COL_IDENTIFIER).append("=?,")
+                    .append(MUser.COL_NAME).append("=?")
+                    .append(" WHERE ").append(MUser.COL_ID).append("=?");
+                mUpdateUser = db.compileStatement(sql.toString());
+            }
+        }
+        
+        synchronized(mUpdateUser) {
+            bindField(mUpdateUser, 1, user.type);
+            bindField(mUpdateUser, 2, user.identifier);
+            bindField(mUpdateUser, 3, user.name);
+            bindField(mUpdateUser, 4, user.id);
+            mUpdateUser.execute();
         }
     }
     
@@ -108,6 +134,16 @@ public class UserManager extends ManagerBase {
     	}
     	
     	return users;
+    }
+    
+    public void ensureUser(MUser user) {
+    	MUser existing = getUser(user.name, user.type, user.identifier);
+    	if(existing != null) {
+    		user.id = existing.id;
+    		updateUser(user);
+    	} else {
+    		insertUser(user);
+    	}
     }
     
     private MUser fillInStandardFields(Cursor c) {

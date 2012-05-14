@@ -123,14 +123,12 @@ public class RequestHandler extends IntentService {
 		if(!name.equals("") && !type.equals("") && !hash.equals("")) {
 			MUser newUser = new MUser(localUserId, name, type, hash);
 			// TODO: ensure only one user
-			mUserManager.insertUser(newUser);
+			mUserManager.ensureUser(newUser);
 			Log.i(TAG, "new user registered: " + name);
 			
-			MProfile profile = new MProfile();
-			profile.userId = newUser.id;
-			profile.dorm = payload.optString("dorm");
-			profile.department = payload.optString("department");
-			mProfileManager.insertProfile(profile);
+			MProfile profile = new MProfile(newUser.id, 
+					payload.optString("dorm"), payload.optString("department"));
+			mProfileManager.ensureProfile(profile);
 			Log.i(TAG, "new profile inserted "
 					+ profile.dorm + " " + profile.department);
 		}

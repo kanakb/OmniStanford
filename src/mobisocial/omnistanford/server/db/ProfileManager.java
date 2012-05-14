@@ -25,6 +25,7 @@ public class ProfileManager extends ManagerBase {
     };
 
     private SQLiteStatement mInsertProfile;
+    private SQLiteStatement mUpdateProfile;
     
     public ProfileManager(SQLiteOpenHelper databaseSource) {
         super(databaseSource);
@@ -53,6 +54,28 @@ public class ProfileManager extends ManagerBase {
             bindField(mInsertProfile, dorm, profile.dorm);
             bindField(mInsertProfile, department, profile.department);
             profile.id = mInsertProfile.executeInsert();
+        }
+    }
+    
+    public void updateProfile(MProfile profile) {
+        SQLiteDatabase db = initializeDatabase();
+        if (mUpdateProfile == null) {
+            synchronized(this) {
+                StringBuilder sql = new StringBuilder("UPDATE ")
+                    .append(MProfile.TABLE)
+                    .append(" SET ")
+                    .append(MProfile.COL_DEPARTMENT).append("=?,")
+                    .append(MProfile.COL_DORM).append("=?")
+                    .append(" WHERE ").append(MProfile.COL_USER_ID).append("=?");
+                mUpdateProfile = db.compileStatement(sql.toString());
+            }
+        }
+        
+        synchronized(mUpdateProfile) {
+            bindField(mUpdateProfile, 1, profile.department);
+            bindField(mUpdateProfile, 2, profile.dorm);
+            bindField(mUpdateProfile, 3, profile.userId);
+            mUpdateProfile.execute();
         }
     }
     
@@ -102,6 +125,16 @@ public class ProfileManager extends ManagerBase {
     	}
     	
     	return matchedUserIds;
+    }
+    
+    public void ensureProfile(MProfile profile) {
+    	MProfile existing = getProfile(profile.userId);
+    	if(existing != null) {
+    		profile.id = existing.id;
+    		updateProfile(profile);
+    	} else {
+    		insertProfile(profile);
+    	}
     }
     
     private MProfile fillInStandardFields(Cursor c) {
