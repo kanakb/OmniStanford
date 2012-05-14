@@ -170,6 +170,23 @@ public class LocationManager extends ManagerBase {
         }
     }
     
+    public MLocation getLocation(Long id) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_ID + "=?";
+        String[] selectionArgs = new String[] { id.toString() };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+    
     public MLocation getLocation(String principal) {
         SQLiteDatabase db = initializeDatabase();
         String table = MLocation.TABLE;
