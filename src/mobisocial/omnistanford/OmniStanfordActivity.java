@@ -93,7 +93,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private OnClickListener mCheckinClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			DbFeed feed = mMusubi.getFeed();
+			LocationManager lm = new LocationManager(App.getDatabaseSource(v.getContext()));
+			MLocation loc = lm.getLocation("arrillaga.stanford@gmail.com");
+			DbFeed feed = mMusubi.getFeed(loc.feedUri);
 	    	Request req = new Request("checkin");
 	    	req.addParam("lon", "1").addParam("lat", "2");
 	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
@@ -104,7 +106,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private OnClickListener mRegisterClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			DbFeed feed = mMusubi.getFeed();
+			LocationManager lm = new LocationManager(App.getDatabaseSource(v.getContext()));
+			MLocation loc = lm.getLocation("arrillaga.stanford@gmail.com");
+			DbFeed feed = mMusubi.getFeed(loc.feedUri);
 	    	Request req = new Request("register");
 	    	req.addParam("dorm", "McFarland")
 	    		.addParam("department", "Computer Science");
