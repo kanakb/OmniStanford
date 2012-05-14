@@ -222,7 +222,7 @@ public class LocationService extends Service {
 		public void onProviderDisabled(String provider) {
 			Log.i(TAG, "provider disabled: " + provider);
 			if (provider.equals(LocationManager.NETWORK_PROVIDER)) {
-			    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+//			    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
 			} else if (provider.equals(LocationManager.GPS_PROVIDER)) {
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
             }

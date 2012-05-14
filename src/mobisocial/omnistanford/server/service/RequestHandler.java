@@ -1,5 +1,6 @@
 package mobisocial.omnistanford.server.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -31,6 +32,11 @@ public class RequestHandler extends IntentService {
 	
 	private SQLiteOpenHelper mDBHelper;
 	private SQLiteOpenHelper mServerDBHelper;
+	
+	private LocationManager mLocManager;
+	private UserManager mUserManager;
+	private ProfileManager mProfileManager;
+	private CheckinManager mCheckinManager;
 
 	public RequestHandler() {
 		super("RequestHandlerService");		
@@ -40,6 +46,12 @@ public class RequestHandler extends IntentService {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		mDBHelper = App.getDatabaseSource(this);
 		mServerDBHelper = App.getServerDatabaseSource(this);
+		
+		mLocManager = new LocationManager(mDBHelper);
+		mUserManager = new UserManager(mServerDBHelper);
+		mProfileManager = new ProfileManager(mServerDBHelper);
+		mCheckinManager = new CheckinManager(mServerDBHelper);
+		
 		return super.onStartCommand(intent,flags,startId);
 	}
 
@@ -68,14 +80,8 @@ public class RequestHandler extends IntentService {
 		JSONObject from = req.optJSONObject("from");
 		JSONObject payload = req.optJSONObject("payload");
 		if(payload != null) {
-			double lon = payload.optDouble("lon");
-			double lat = payload.optDouble("lat");
-			// TODO: find location by longitude and latitude
-			
-			LocationManager lm = new LocationManager(mDBHelper);
-			MLocation location = lm.getLocations("Dining Hall").get(0);
-			UserManager um = new UserManager(mServerDBHelper);
-			MUser user = um.getUser(from.optString("name"), 
+			MLocation location = mLocManager.getLocations("Dining Hall").get(0);
+			MUser user = mUserManager.getUser(from.optString("name"), 
 					from.optString("type"), from.optString("principal"));
 			if(user == null) {
 				// TODO: user not found, error response
@@ -84,18 +90,18 @@ public class RequestHandler extends IntentService {
 			
 			MCheckinData checkin = new MCheckinData(user.id, 
 					location.id, System.currentTimeMillis(), null);
-			CheckinManager cm = new CheckinManager(mServerDBHelper);
-			cm.insertCheckin(checkin);
+			mCheckinManager.insertCheckin(checkin);
 			Log.i(TAG, "new checkin inserted");
 			
-			List<MCheckinData> checkins = cm.findOpenCheckinAt(location.id);
+			List<MUser> users = findSimilarUsersAt(user, location.id);
 			JSONObject res = new JSONObject();
 			try {
 				JSONArray arr = new JSONArray();
-				for(MCheckinData c : checkins) {
+				for(MUser u : users) {
 					JSONObject o = new JSONObject();
-					o.put("location_id", c.locationId);
-					o.put("user_id", c.userId);
+					o.put("name", u.name);
+					o.put("principal", u.identifier);
+					o.put("type", u.type);
 					arr.put(o);
 				}
 				res.put("res", arr);
@@ -115,21 +121,31 @@ public class RequestHandler extends IntentService {
 		String hash = from.optString("principal");
 		
 		if(!name.equals("") && !type.equals("") && !hash.equals("")) {
-			UserManager um = new UserManager(mServerDBHelper);
 			MUser newUser = new MUser(localUserId, name, type, hash);
 			// TODO: ensure only one user
-			um.insertUser(newUser);
+			mUserManager.insertUser(newUser);
 			Log.i(TAG, "new user registered: " + name);
 			
 			MProfile profile = new MProfile();
 			profile.userId = newUser.id;
 			profile.dorm = payload.optString("dorm");
 			profile.department = payload.optString("department");
-			ProfileManager pm = new ProfileManager(mServerDBHelper);
-			pm.insertProfile(profile);
+			mProfileManager.insertProfile(profile);
 			Log.i(TAG, "new profile inserted "
 					+ profile.dorm + " " + profile.department);
 		}
+	}
+	
+	List<MUser> findSimilarUsersAt(MUser user, Long locationId) {
+		MProfile profile = mProfileManager.getProfile(user.id);
+		
+		// TODO: this is a naive way to find similar users.
+		List<Long> checkinUserIds = mCheckinManager.findOpenCheckinAt(locationId);
+		
+		List<Long> matchedUserIds = mProfileManager.getMatchingUserIds(checkinUserIds, 
+				profile.dorm, profile.department);
+		
+		return mUserManager.getUsers(matchedUserIds);
 	}
 
 }

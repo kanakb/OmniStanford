@@ -67,23 +67,23 @@ public class CheckinManager extends ManagerBase {
         }
     }
     
-    public List<MCheckinData> findOpenCheckinAt(long locationId) {
+    public List<Long> findOpenCheckinAt(long locationId) {
     	SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +
         			MCheckinData.COL_EXIT_TIME + " IS NULL";
         String[] selectionArgs = new String[] { String.valueOf(locationId) };
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
-    	List<MCheckinData> checkins = new ArrayList<MCheckinData>(c.getCount());
+    	List<Long> checkinUserIds = new ArrayList<Long>(c.getCount());
         try {
             while (c.moveToNext()) {
-                checkins.add(fillInStandardFields(c));
+            	checkinUserIds.add(c.getLong(user_id));
             } 
         } finally {
             c.close();
         }
         
-        return checkins;
+        return checkinUserIds;
     }
     
     private MCheckinData fillInStandardFields(Cursor c) {

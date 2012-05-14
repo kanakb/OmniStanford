@@ -1,5 +1,8 @@
 package mobisocial.omnistanford.server.db;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import mobisocial.omnistanford.db.ManagerBase;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -68,6 +71,37 @@ public class ProfileManager extends ManagerBase {
         } finally {
             c.close();
         }
+    }
+    
+    public List<Long> getMatchingUserIds(List<Long> userIds, String dorm, String department) {
+    	// TODO: assert userIds.size() >= 1
+    	List<Long> matchedUserIds = new ArrayList<Long>();
+    	SQLiteDatabase db = initializeDatabase();
+    	String table = MProfile.TABLE;
+    	String selection = "(" + MProfile.COL_DEPARTMENT + "=? OR "
+    					+ MProfile.COL_DORM + "=? ) AND "
+    					+ MProfile.COL_USER_ID + " IN (";
+    	String[] selectionArgs = new String[2 + userIds.size()];
+    	selectionArgs[0] = department;
+    	selectionArgs[1] = dorm;
+    	for(int i = 0; i < userIds.size(); i++) {
+    		if(i == userIds.size() - 1) {
+    			selection += "?)";
+    		} else {
+        		selection += "?,";
+    		}
+    		selectionArgs[i+2] = userIds.get(i).toString();
+    	}
+    	Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+    	try {
+    		while(c.moveToNext()) {
+    			matchedUserIds.add(c.getLong(userId));
+    		}
+    	} finally {
+    		c.close();
+    	}
+    	
+    	return matchedUserIds;
     }
     
     private MProfile fillInStandardFields(Cursor c) {

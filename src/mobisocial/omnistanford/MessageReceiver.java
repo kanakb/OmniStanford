@@ -32,6 +32,7 @@ public class MessageReceiver extends BroadcastReceiver {
             return;
         }
         
+        Log.i(TAG, obj.getJson().toString());
         Intent service = new Intent(context, RequestHandler.class);
         service.putExtras(intent);
         context.startService(service);

@@ -1,5 +1,8 @@
 package mobisocial.omnistanford.server.db;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import mobisocial.omnistanford.db.ManagerBase;
 
 import android.database.Cursor;
@@ -79,6 +82,32 @@ public class UserManager extends ManagerBase {
         } finally {
             c.close();
         }
+    }
+    
+    public List<MUser> getUsers(List<Long> userIds) {
+    	List<MUser> users = new ArrayList<MUser>();
+    	SQLiteDatabase db = initializeDatabase();
+    	String table = MUser.TABLE;
+    	String selection = MUser.COL_ID + " IN (";
+    	String[] selectionArgs = new String[userIds.size()];
+    	for(int i = 0; i < userIds.size(); i++) {
+    		if(i == userIds.size() - 1) {
+    			selection += "?)";
+    		} else {
+        		selection += "?,";
+    		}
+    		selectionArgs[i] = userIds.get(i).toString();
+    	}
+    	Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+    	try {
+    		while(c.moveToNext()) {
+    			users.add(fillInStandardFields(c));
+    		}
+    	} finally {
+    		c.close();
+    	}
+    	
+    	return users;
     }
     
     private MUser fillInStandardFields(Cursor c) {
