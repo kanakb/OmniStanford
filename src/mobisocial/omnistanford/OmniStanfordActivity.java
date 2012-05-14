@@ -51,7 +51,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         LinearLayout layout = (LinearLayout) findViewById(R.id.contentArea);
         Button registerButton = new Button(this);
-        registerButton.setText("Reigster");
+        registerButton.setText("Register");
         registerButton.setOnClickListener(mRegisterClickListener);
         layout.addView(registerButton);
         
