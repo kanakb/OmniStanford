@@ -24,6 +24,9 @@
         <activity
             android:name=".SelectContactsActivity"
             android:label="@string/select_contacts" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/settings" />
         <service android:name=".service.LocationService"></service>
         
         <receiver android:name=".MessageReceiver">

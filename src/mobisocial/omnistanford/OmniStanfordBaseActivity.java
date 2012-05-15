@@ -60,8 +60,7 @@ public class OmniStanfordBaseActivity extends Activity {
     private OnClickListener mSettingsClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            // TODO: this isn't the right activity
-            Intent create = new Intent(OmniStanfordBaseActivity.this, SelectContactsActivity.class);
+            Intent create = new Intent(OmniStanfordBaseActivity.this, SettingsActivity.class);
             startActivity(create);
             finish();
         }

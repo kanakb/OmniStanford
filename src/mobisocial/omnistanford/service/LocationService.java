@@ -39,10 +39,13 @@ public class LocationService extends Service {
 	
 	private static final String ACTION_CREATE_STANFORD_FEED =
 	        "musubi.intent.action.CREATE_STANFORD_FEED";
-	//private static final int REQUEST_CREATE_FEED = 1;
 	private static final String EXTRA_NAME = "mobisocial.omnistanford.json";
 	
-	private static final long INTERVAL = 1000 * 60 * 10;
+	private static final long INTERVAL = 1000 * 60 * 15;
+	private static final long SHORT_INTERVAL = 1000 * 60 * 5;
+	
+	private Integer mUpdateCount = 0;
+	private static final int MAX_UPDATE_COUNT = 4;
 	
 	private LocationManager mLocationManager;
 	private mobisocial.omnistanford.db.LocationManager mLm =
@@ -55,25 +58,42 @@ public class LocationService extends Service {
 			return LocationBinder.this;
 		}
 	}
-	
-	private void setLocationState() {
-	    Location last = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-	    if (last != null) {
-    	    double latitude = last.getLatitude();
-    	    double longitude = last.getLongitude();
-    	    
-    	    Log.d(TAG, "Location: (" + latitude + ", " + longitude + ")");
-    	    
-    	    // Use fine locations if at Stanford
-    	    if (latitude < 37.446 && latitude > 37.415 && longitude < -122.148 && longitude > -122.1926) {
-    	        Log.d(TAG, "At Stanford");
-    	        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
-    	    } else {
-    	        mLocationManager.removeUpdates(mLocationListener);
-    	        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
-    	    }
-	    }
-	}
+    
+    private void setInnerLocationState() {
+        Location last = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (last != null) {
+            double latitude = last.getLatitude();
+            double longitude = last.getLongitude();
+            
+            Log.d(TAG, "Location: (" + latitude + ", " + longitude + ")");
+            
+            // Use fine locations if at Stanford
+            if (latitude < 37.446 && latitude > 37.415 && longitude < -122.148 && longitude > -122.1926) {
+                Log.d(TAG, "At Stanford");
+                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+            }
+        }
+    }
+    
+    private void setOuterLocationState() {
+        Location last = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (last != null) {
+            double latitude = last.getLatitude();
+            double longitude = last.getLongitude();
+            
+            Log.d(TAG, "Location: (" + latitude + ", " + longitude + ")");
+            
+            // Use fine locations if at Stanford
+            if (latitude < 37.446 && latitude > 37.415 && longitude < -122.148 && longitude > -122.1926) {
+                Log.d(TAG, "At Stanford");
+                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+            } else {
+                mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+            }
+        }
+    }
 	
 	@Override
 	public void onCreate() {
@@ -83,12 +103,20 @@ public class LocationService extends Service {
 	    AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
         long currentElapsedTime = SystemClock.elapsedRealtime();
         
-	    Intent locationUpdateIntent = new Intent(this, LocationService.class);
-	    locationUpdateIntent.putExtra("locationUpdate", true);
-	    PendingIntent locationSender = PendingIntent.getService(this, 0, locationUpdateIntent, 0);
-	    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
-	            INTERVAL, locationSender);
-	    setLocationState();
+        Intent locationUpdateIntent = new Intent(this, LocationService.class);
+        locationUpdateIntent.putExtra("locationUpdate", true);
+        PendingIntent locationSender = PendingIntent.getService(this, 0, locationUpdateIntent, 0);
+        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
+                SHORT_INTERVAL, locationSender);
+        setInnerLocationState();
+        
+        Intent periodicLocationUpdateIntent = new Intent(this, LocationService.class);
+        locationUpdateIntent.putExtra("periodicLocationUpdate", true);
+        PendingIntent periodicLocationSender =
+                PendingIntent.getService(this, 0, periodicLocationUpdateIntent, 0);
+        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
+                INTERVAL, periodicLocationSender);
+        setOuterLocationState();
 	    
 	    Intent locationFetchIntent = new Intent(this, LocationService.class);
 	    locationFetchIntent.putExtra("locationFetch", true);
@@ -107,8 +135,10 @@ public class LocationService extends Service {
     		if (intent.hasExtra("locationFetch")) {
     		    new LocationUpdater(mLm).update();
     		} else if (intent.hasExtra("locationUpdate")) {
-    		    setLocationState();
-    		}
+                setInnerLocationState();
+            } else if (intent.hasExtra("periodicLocationUpdate")) {
+                setOuterLocationState();
+            }
 		}
 		return START_STICKY;
 	}
@@ -255,6 +285,13 @@ public class LocationService extends Service {
 			            }
 			        }
 			    }
+			}
+			synchronized(mUpdateCount) {
+    			mUpdateCount++;
+    			if (mUpdateCount > MAX_UPDATE_COUNT) {
+    			    mUpdateCount = 0;
+    			    mLocationManager.removeUpdates(this);
+    			}
 			}
 		}
 

@@ -7,5 +7,106 @@
     <string name="settings_button">Settings</string>
     <string name="connect">Connect…</string>
     <string name="select_contacts">Select Contacts</string>
+    <string name="enable_share">Enable Location Sharing</string>
+    <string name="settings">Settings</string>
+    <string name="departments">Select Your Department</string>
+    <string-array name="departments_list">
+        <item>None</item>
+        <item>Undeclared</item>
+        <item>Aeronautics and Astronautics</item>
+		<item>Anesthesia</item>
+		<item>Anthropology</item>
+		<item>Applied Physics</item>
+		<item>Art and Art History</item>
+		<item>Biochemistry</item>
+		<item>Bioengineering</item>
+		<item>Biology</item>
+		<item>Business, Graduate School of</item>
+		<item>Cardiothoracic Surgery</item>
+		<item>Chemical and Systems Biology</item>
+		<item>Chemical Engineering</item>
+		<item>Chemistry</item>
+		<item>Civil and Environmental Engineering</item>
+		<item>Classics</item>
+		<item>Communication</item>
+		<item>Comparative Literature</item>
+		<item>Comparative Medicine</item>
+		<item>Computer Science</item>
+		<item>Dermatology</item>
+		<item>Developmental Biology</item>
+		<item>Drama</item>
+		<item>East Asian Languages and Cultures</item>
+		<item>Economics</item>
+		<item>Education, School of</item>
+		<item>Electrical Engineering</item>
+		<item>Energy Resources Engineering</item>
+		<item>English</item>
+		<item>Environmental Earth System Science</item>
+		<item>French and Italian</item>
+		<item>Genetics</item>
+		<item>Geological and Environmental Sciences</item>
+		<item>Geophysics</item>
+		<item>German Studies</item>
+		<item>Health Research and Policy</item>
+		<item>History</item>
+		<item>Iberian and Latin American Cultures</item>
+		<item>Law School</item>
+		<item>Linguistics</item>
+		<item>Management Science and Engineering</item>
+		<item>Materials Science and Engineering</item>
+		<item>Mathematics</item>
+		<item>Mechanical Engineering</item>
+		<item>Medicine</item>
+		<item>Microbiology and Immunology</item>
+		<item>Molecular and Cellular Physiology</item>
+		<item>Music</item>
+		<item>Neurology and Neurological Sciences</item>
+		<item>Neurosurgery</item>
+		<item>Obstetrics and Gynecology</item>
+		<item>Ophthalmology</item>
+		<item>Orthopaedic Surgery</item>
+		<item>Otolaryngology (Head and Neck Surgery)</item>
+		<item>Particle Physics and Astrophysics (SLAC)</item>
+		<item>Pathology</item>
+		<item>Pediatrics</item>
+		<item>Philosophy</item>
+		<item>Photon Science (SLAC)</item>
+		<item>Physics</item>
+		<item>Political Science</item>
+		<item>Psychiatry and Behavioral Sciences</item>
+		<item>Psychology</item>
+		<item>Radiation Oncology</item>
+		<item>Radiology</item>
+		<item>Religious Studies</item>
+		<item>Slavic Languages and Literature</item>
+		<item>Sociology</item>
+		<item>Statistics</item>
+		<item>Structural Biology</item>
+		<item>Surgery</item>
+		<item>Urology</item>
+    </string-array>
+    <string name="residences">Select Your Residence</string>
+    <string-array name="residences_list">
+        <item>None</item>
+        <item>Off-Campus</item>
+        <item>Branner Hall</item>
+		<item>Crothers Hall</item>
+		<item>Escondido South</item>
+		<item>Escondido Village</item>
+		<item>Florence Moore Hall</item>
+		<item>Governor\'s Corner</item>
+		<item>Lagunita Court</item>
+		<item>Lyman Residences</item>
+		<item>Manzanita Park</item>
+		<item>Mirrielees House</item>
+		<item>Munger Residences</item>
+		<item>Oak Creek Apartments</item>
+		<item>Rains Houses</item>
+		<item>Roble Hall</item>
+		<item>Schwab Residential Center</item>
+		<item>Stern Hall</item>
+		<item>Toyon Hall</item>
+		<item>Wilbur Hall</item>
+    </string-array>
 
 </resources>
