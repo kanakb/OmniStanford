@@ -51,18 +51,22 @@ public class OmniStanfordBaseActivity extends Activity {
     private OnClickListener mHomeClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
-            startActivity(home);
-            finish();
+        	if(!(v.getContext() instanceof OmniStanfordActivity)) {
+	            Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
+	            startActivity(home);
+	            finish();
+        	}
         }
     };
     
     private OnClickListener mSettingsClickListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            Intent create = new Intent(OmniStanfordBaseActivity.this, SettingsActivity.class);
-            startActivity(create);
-            finish();
+        	if(!(v.getContext() instanceof SettingsActivity)) {
+	            Intent create = new Intent(OmniStanfordBaseActivity.this, SettingsActivity.class);
+	            startActivity(create);
+	            finish();
+        	}
         }
     };
     
