@@ -134,26 +134,38 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
         LocationManager lm = new LocationManager(App.getDatabaseSource(this));
         List<MCheckinData> checkins = cm.getRecentCheckins(MONTH);
+        final HashMap<Long, Long> idMap = new HashMap<Long, Long>();
         for (MCheckinData checkin : checkins) {
             HashMap<String, String> hm = new HashMap<String, String>();
             MLocation loc = lm.getLocation(checkin.locationId);
             hm.put("title", loc.name);
             hm.put("subtitle", new Date(checkin.entryTime).toString());
+            idMap.put(new Long(hms.size()), checkin.id);
             hms.add(hm);
         }
         /*HashMap<String, String> hm = new HashMap<String, String>();
         hm.put("title", "Gates Building");
         hm.put("subtitle", new Date(0L).toString());
-        hms.add(hm);*/
+        hms.add(hm);
+        HashMap<String, String> hm2 = new HashMap<String, String>();
+        hm2.put("title", "Arrillaga");
+        hm2.put("subtitle", new Date(4200L).toString());
+        hms.add(hm2);*/
         
         // TODO: this should be pull to refresh
         ListView listView = new ListView(this);
         listView.setAdapter(new SimpleAdapter(this, hms, R.layout.plain_list_item, from, to));
         listView.setOnItemClickListener(new OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-                    long arg3) {
+            public void onItemClick(AdapterView<?> parent, View view, int position,
+                    long id) {
                 //do something
+                Log.d(TAG, "Selected " + position);
+                Intent intent = new Intent(OmniStanfordActivity.this, SelectContactsActivity.class);
+                if (idMap.containsKey(new Long(position))) {
+                    intent.putExtra("checkin", idMap.get(new Long(position)).longValue());
+                }
+                startActivity(intent);
             }
         });
         
