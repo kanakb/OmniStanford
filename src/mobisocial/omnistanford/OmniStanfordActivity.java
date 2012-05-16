@@ -2,15 +2,23 @@ package mobisocial.omnistanford;
 
 import java.util.List;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.LocationManager;
@@ -26,6 +34,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
     
     private Musubi mMusubi;
+    private View mSettingsView;
+    private LinearLayout mButtonView;
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -49,16 +59,26 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        LinearLayout layout = (LinearLayout) findViewById(R.id.contentArea);
+        mButtonView = new LinearLayout(this);
+        mButtonView.setOrientation(LinearLayout.VERTICAL);
         Button registerButton = new Button(this);
         registerButton.setText("Register");
         registerButton.setOnClickListener(mRegisterClickListener);
-        layout.addView(registerButton);
+        mButtonView.addView(registerButton);
         
         Button checkinButton = new Button(this);
         checkinButton.setText("Checkin");
         checkinButton.setOnClickListener(mCheckinClickListener);
-        layout.addView(checkinButton);
+        mButtonView.addView(checkinButton);
+        
+//        findViewById(R.id.settingsButton)
+//        	.setOnClickListener(new OnClickListener() {
+//				@Override
+//				public void onClick(View arg0) {
+////					flipit();
+//				}
+//        	});
+        ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
         
         if (!Musubi.isMusubiInstalled(this)) {
             return;
@@ -82,7 +102,14 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                 break;
             }
         }
-        layout.addView(tv);
+        mButtonView.addView(tv);
+        
+//        LayoutInflater li = LayoutInflater.from(this);
+//        mSettingsView = li.inflate(R.layout.settings, null);
+//        mSettingsView.setVisibility(View.GONE);
+//        ((LinearLayout)findViewById(R.id.contentArea)).addView(mSettingsView);
+        
+        
         
         // Do some location updates
         new CreateFeedsTask().execute(App.getDatabaseSource(this));
@@ -121,4 +148,34 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     	Intent locationService = new Intent(this, LocationService.class);
     	startService(locationService);
     }
+    
+//    private Interpolator accelerator = new AccelerateInterpolator();
+//    private Interpolator decelerator = new DecelerateInterpolator();
+//    private void flipit() {
+//    	final View visibleList;
+//        final View invisibleList;
+//        if(mButtonView.getVisibility() == View.GONE) {
+//        	visibleList = mSettingsView;
+//        	invisibleList = mButtonView;
+//        } else {
+//        	invisibleList = mSettingsView;
+//        	visibleList = mButtonView;
+//        }
+//        ObjectAnimator visToInvis = ObjectAnimator.ofFloat(visibleList, "rotationY", 0f, 90f);
+//        visToInvis.setDuration(500);
+//        visToInvis.setInterpolator(accelerator);
+//        final ObjectAnimator invisToVis = ObjectAnimator.ofFloat(invisibleList, "rotationY",
+//                -90f, 0f);
+//        invisToVis.setDuration(500);
+//        invisToVis.setInterpolator(decelerator);
+//        visToInvis.addListener(new AnimatorListenerAdapter() {
+//            @Override
+//            public void onAnimationEnd(Animator anim) {
+//            	visibleList.setVisibility(View.GONE);
+//                invisToVis.start();
+//                invisibleList.setVisibility(View.VISIBLE);
+//            }
+//        });
+//        visToInvis.start();
+//    }
 }

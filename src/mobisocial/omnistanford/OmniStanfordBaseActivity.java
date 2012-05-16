@@ -54,7 +54,6 @@ public class OmniStanfordBaseActivity extends Activity {
         	if(!(v.getContext() instanceof OmniStanfordActivity)) {
 	            Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
 	            startActivity(home);
-	            finish();
         	}
         }
     };
@@ -65,7 +64,6 @@ public class OmniStanfordBaseActivity extends Activity {
         	if(!(v.getContext() instanceof SettingsActivity)) {
 	            Intent create = new Intent(OmniStanfordBaseActivity.this, SettingsActivity.class);
 	            startActivity(create);
-	            finish();
         	}
         }
     };
