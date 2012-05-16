@@ -18,7 +18,7 @@ public class CheckinManager extends ManagerBase {
     private static final int entryTime = 3;
     private static final int exitTime = 4;
     
-    private static final int DAY = 1000 * 60 * 60 * 24;
+    private static final long DAY = 1000 * 60 * 60 * 24;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
@@ -109,12 +109,17 @@ public class CheckinManager extends ManagerBase {
     }
     
     public List<MCheckinData> getRecentCheckins() {
-        Long cutoff = System.currentTimeMillis() - DAY;
+        return getRecentCheckins(DAY);
+    }
+    
+    public List<MCheckinData> getRecentCheckins(long duration) {
+        Long cutoff = System.currentTimeMillis() - duration;
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_ENTRY_TIME + ">?";
         String[] selectionArgs = new String[] { cutoff.toString() };
-        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
         try {
             List<MCheckinData> checkins = new ArrayList<MCheckinData>();
             while (c.moveToNext()) {
