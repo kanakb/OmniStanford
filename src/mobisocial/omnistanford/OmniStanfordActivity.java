@@ -1,5 +1,8 @@
 package mobisocial.omnistanford;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import android.animation.Animator;
@@ -16,9 +19,12 @@ import android.view.View.OnClickListener;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.LocationManager;
@@ -32,6 +38,8 @@ import mobisocial.socialkit.obj.MemObj;
 
 public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
+    
+    private static final long MONTH = 1000 * 60 * 60 * 24 * 30;
     
     private Musubi mMusubi;
     private View mSettingsView;
@@ -87,9 +95,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         mMusubi = Musubi.getInstance(this);
 
         TextView tv = new TextView(this);
-        tv.setTextSize(40.0f);
-        tv.setTextColor(Color.GREEN);
-        tv.setText("Not currently checked in.");
+        tv.setTextSize(20.0f);
+        tv.setTextColor(Color.WHITE);
+        tv.setText("Recent Locations");
         CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
         List<MCheckinData> checkins = cm.getRecentCheckins();
         for (MCheckinData data : checkins) {
@@ -97,12 +105,14 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                 LocationManager lm = new LocationManager(App.getDatabaseSource(this));
                 MLocation loc = lm.getLocation(data.locationId);
                 if (loc != null) {
-                    tv.setText("Checked in at " + loc.name);
+                    //tv.setText("Checked in at " + loc.name);
                 }
                 break;
             }
         }
         mButtonView.addView(tv);
+        
+        showRecent(mButtonView);
         
 //        LayoutInflater li = LayoutInflater.from(this);
 //        mSettingsView = li.inflate(R.layout.settings, null);
@@ -115,6 +125,39 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         new CreateFeedsTask().execute(App.getDatabaseSource(this));
         
         bindServices();
+    }
+    
+    private void showRecent(LinearLayout wrapper) {
+        String[] from = new String[] { "title", "subtitle" };
+        int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle };
+        List<HashMap<String, String>> hms = new ArrayList<HashMap<String, String>>();
+        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+        List<MCheckinData> checkins = cm.getRecentCheckins(MONTH);
+        for (MCheckinData checkin : checkins) {
+            HashMap<String, String> hm = new HashMap<String, String>();
+            MLocation loc = lm.getLocation(checkin.locationId);
+            hm.put("title", loc.name);
+            hm.put("subtitle", new Date(checkin.entryTime).toString());
+            hms.add(hm);
+        }
+        /*HashMap<String, String> hm = new HashMap<String, String>();
+        hm.put("title", "Gates Building");
+        hm.put("subtitle", new Date(0L).toString());
+        hms.add(hm);*/
+        
+        // TODO: this should be pull to refresh
+        ListView listView = new ListView(this);
+        listView.setAdapter(new SimpleAdapter(this, hms, R.layout.plain_list_item, from, to));
+        listView.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+                    long arg3) {
+                //do something
+            }
+        });
+        
+        wrapper.addView(listView);
     }
     
     private OnClickListener mCheckinClickListener = new OnClickListener() {
