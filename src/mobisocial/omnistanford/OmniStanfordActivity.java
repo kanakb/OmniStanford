@@ -120,27 +120,19 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private OnClickListener mCheckinClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			LocationManager lm = new LocationManager(App.getDatabaseSource(v.getContext()));
-			MLocation loc = lm.getLocation("arrillaga.stanford@gmail.com");
-			DbFeed feed = mMusubi.getFeed(loc.feedUri);
-	    	Request req = new Request("checkin");
-	    	req.addParam("lon", "1").addParam("lat", "2");
-	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
-	    	Log.d(TAG, feed.getLatestObj().getJson().toString());
+			Request req = new Request("arrillaga.stanford@gmail.com", "checkin", null);
+			req.addParam("loc_id", "1");
+			req.send(getApplicationContext());
 		}
     };
     
     private OnClickListener mRegisterClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			LocationManager lm = new LocationManager(App.getDatabaseSource(v.getContext()));
-			MLocation loc = lm.getLocation("arrillaga.stanford@gmail.com");
-			DbFeed feed = mMusubi.getFeed(loc.feedUri);
-	    	Request req = new Request("register");
-	    	req.addParam("dorm", "McFarland")
-	    		.addParam("department", "Computer Science");
-	    	feed.insert(new MemObj("omnistanford", req.toJSON(v.getContext())));
-	    	Log.d(TAG, feed.getLatestObj().getJson().toString());
+			Request req = new Request("arrillaga.stanford@gmail.com", "register", null);
+			req.addParam("dorm", "McFarland")
+				.addParam("department", "CS");
+			req.send(v.getContext());
 		}
     };
     

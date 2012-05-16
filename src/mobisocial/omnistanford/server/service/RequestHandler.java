@@ -20,6 +20,7 @@ import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import mobisocial.socialkit.obj.AppStateObj;
 import mobisocial.socialkit.obj.MemObj;
 import android.app.IntentService;
 import android.content.Intent;
@@ -62,7 +63,7 @@ public class RequestHandler extends IntentService {
 			Musubi musubi = Musubi.forIntent(this, intent);
 			DbObj obj = musubi.objForUri(objUri);
 			DbFeed feed = obj.getContainingFeed();
-			JSONObject request = obj.getJson();
+			JSONObject request = obj.getJson().optJSONObject("req");
 			long requesterLocalId = feed.getMembers().get(0).getLocalId();
 			if(request.has("from") && request.has("route")) {
 				String route = request.optString("route");
@@ -108,7 +109,7 @@ public class RequestHandler extends IntentService {
 			} catch(JSONException e) {
 				Log.i(TAG, e.toString());
 			}
-			feed.insert(new MemObj("omnistanford", res));
+			feed.insert(new AppStateObj(res, null));
 		}
 	}
 	

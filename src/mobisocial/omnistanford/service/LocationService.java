@@ -264,15 +264,15 @@ public class LocationService extends Service {
 			                
 			                // Check in remotely
 			                // TODO: send according to privacy settings
-			                Request request = new Request("checkin");
-                            request.addParam("lat", new Double(mCurrent.getLatitude()).toString());
-                            request.addParam("lon", new Double(mCurrent.getLongitude()).toString());
-			                Musubi musubi = Musubi.getInstance(LocationService.this);
-			                DbFeed feed = musubi.getFeed(match.feedUri);
-			                feed.postObj(new MemObj("omnistanford", request.toJSON(LocationService.this)));
-                            
-                            // Check in locally
-                            cm.insertCheckin(data);
+//			                Request request = new Request("checkin");
+//                            request.addParam("lat", new Double(mCurrent.getLatitude()).toString());
+//                            request.addParam("lon", new Double(mCurrent.getLongitude()).toString());
+//			                Musubi musubi = Musubi.getInstance(LocationService.this);
+//			                DbFeed feed = musubi.getFeed(match.feedUri);
+//			                feed.postObj(new MemObj("omnistanford", request.toJSON(LocationService.this)));
+//                            
+//                            // Check in locally
+//                            cm.insertCheckin(data);
 			            }
 			        }
 			    } else {

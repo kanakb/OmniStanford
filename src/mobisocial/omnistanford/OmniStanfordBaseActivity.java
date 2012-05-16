@@ -143,13 +143,10 @@ public class OmniStanfordBaseActivity extends Activity {
                             loc.feedUri = Uri.parse(array.get(i));
                         	Log.i(TAG, loc.feedUri.toString());
 
-                            lm.updateLocation(loc);
-                            Request request = new Request("register");
-                            request.addParam("dorm", "Off-Campus");
-                            request.addParam("department", "CS");
-                            Musubi.getInstance(this)
-                                .getFeed(loc.feedUri)
-                                .insert(new MemObj("omnistanford", request.toJSON(this)));
+                        	Request request = new Request("arrillaga.stanford@gmail.com", "register", null);
+                        	request.addParam("dorm", "Off-Campus");
+                        	request.addParam("department", "CS");
+                        	request.send(this);
                         }
                     }
                 }
