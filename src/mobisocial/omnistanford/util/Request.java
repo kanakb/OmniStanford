@@ -46,7 +46,7 @@ public class Request {
 			JSONObject from = new JSONObject();
 			MAccount account = Util.loadAccount(context);
     		from.put("name", account.name);
-    		from.put("principal", account.identifier);
+    		from.put("hash", account.identifier);
     		from.put("type", account.type);
     		body.put("from", from);
     		

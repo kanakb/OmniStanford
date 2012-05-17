@@ -142,11 +142,12 @@ public class OmniStanfordBaseActivity extends Activity {
                         if (loc != null) {
                             loc.feedUri = Uri.parse(array.get(i));
                         	Log.i(TAG, loc.feedUri.toString());
+                        	lm.updateLocation(loc);
 
-                        	Request request = new Request("arrillaga.stanford@gmail.com", "register", null);
-                        	request.addParam("dorm", "Off-Campus");
-                        	request.addParam("department", "CS");
-                        	request.send(this);
+//                        	Request request = new Request("arrillaga.stanford@gmail.com", "checkin", null);
+//                        	request.addParam("dorm", "Off-Campus");
+//                        	request.addParam("department", "CS");
+//                        	request.send(this);
                         }
                     }
                 }

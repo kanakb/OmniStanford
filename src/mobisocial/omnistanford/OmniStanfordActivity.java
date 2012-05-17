@@ -69,10 +69,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         mButtonView = new LinearLayout(this);
         mButtonView.setOrientation(LinearLayout.VERTICAL);
-        Button registerButton = new Button(this);
-        registerButton.setText("Register");
-        registerButton.setOnClickListener(mRegisterClickListener);
-        mButtonView.addView(registerButton);
         
         Button checkinButton = new Button(this);
         checkinButton.setText("Checkin");
@@ -176,16 +172,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 		@Override
 		public void onClick(View v) {
 			Request req = new Request("arrillaga.stanford@gmail.com", "checkin", null);
-			req.addParam("loc_id", "1");
-			req.send(getApplicationContext());
-		}
-    };
-    
-    private OnClickListener mRegisterClickListener = new OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			Request req = new Request("arrillaga.stanford@gmail.com", "register", null);
-			req.addParam("dorm", "McFarland")
+			req.addParam("loc_id", "1")
+				.addParam("dorm", "McFarland")
 				.addParam("department", "CS");
 			req.send(v.getContext());
 		}

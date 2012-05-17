@@ -17,19 +17,17 @@ public class ServerDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        createTable(db, MUser.TABLE,
-        		MUser.COL_ID, "INTEGER PRIMARY KEY",
-        		MUser.COL_LOCAL_ID, "INTEGER NOT NULL",
-        		MUser.COL_ACCOUNT_TYPE, "TEXT NOT NULL",
-        		MUser.COL_IDENTIFIER, "TEXT NOT NULL",
-        		MUser.COL_NAME, "TEXT NOT NULL");
         
         createTable(db, MCheckinData.TABLE,
                 MCheckinData.COL_ID, "INTEGER PRIMARY KEY",
                 MCheckinData.COL_ENTRY_TIME, "INTEGER",
                 MCheckinData.COL_EXIT_TIME, "INTEGER",
                 MCheckinData.COL_LOCATION_ID, "INTEGER NOT NULL",
-                MCheckinData.COL_USER_ID, "INTEGER NOT NULL");
+                MCheckinData.COL_USER_NAME, "TEXT NOT NULL",
+                MCheckinData.COL_USER_TYPE, "TEXT NOT NULL",
+                MCheckinData.COL_USER_HASH, "TEXT NOT NULL",
+                MCheckinData.COL_USER_DORM, "TEXT NOT NULL",
+                MCheckinData.COL_USER_DEPARTMENT, "TEXT NOT NULL");
     }
 
     @Override
@@ -37,14 +35,6 @@ public class ServerDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion >= newVersion) {
             return;
         }
-        if(oldVersion <= 1) {
-        	createTable(db, MProfile.TABLE,
-        			MProfile.COL_ID, "INTEGER PRIMARY KEY",
-        			MProfile.COL_USER_ID, "INTEGER NOT NULL",
-        			MProfile.COL_DORM, "TEXT",
-        			MProfile.COL_DEPARTMENT, "TEXT");
-        }
-        
         db.setVersion(VERSION);
     }
     

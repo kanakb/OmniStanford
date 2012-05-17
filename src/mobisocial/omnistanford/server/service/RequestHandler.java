@@ -1,6 +1,5 @@
 package mobisocial.omnistanford.server.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -12,16 +11,10 @@ import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.server.db.CheckinManager;
 import mobisocial.omnistanford.server.db.MCheckinData;
-import mobisocial.omnistanford.server.db.MProfile;
-import mobisocial.omnistanford.server.db.MUser;
-import mobisocial.omnistanford.server.db.ProfileManager;
-import mobisocial.omnistanford.server.db.UserManager;
 import mobisocial.socialkit.musubi.DbFeed;
-import mobisocial.socialkit.musubi.DbIdentity;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.obj.AppStateObj;
-import mobisocial.socialkit.obj.MemObj;
 import android.app.IntentService;
 import android.content.Intent;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -35,8 +28,6 @@ public class RequestHandler extends IntentService {
 	private SQLiteOpenHelper mServerDBHelper;
 	
 	private LocationManager mLocManager;
-	private UserManager mUserManager;
-	private ProfileManager mProfileManager;
 	private CheckinManager mCheckinManager;
 
 	public RequestHandler() {
@@ -49,8 +40,6 @@ public class RequestHandler extends IntentService {
 		mServerDBHelper = App.getServerDatabaseSource(this);
 		
 		mLocManager = new LocationManager(mDBHelper);
-		mUserManager = new UserManager(mServerDBHelper);
-		mProfileManager = new ProfileManager(mServerDBHelper);
 		mCheckinManager = new CheckinManager(mServerDBHelper);
 		
 		return super.onStartCommand(intent,flags,startId);
@@ -70,9 +59,7 @@ public class RequestHandler extends IntentService {
 				
 				if(route.equals("checkin")) {
 					onCheckin(requesterLocalId, request, feed);
-				} else if(route.equals("register")) {
-					onRegister(requesterLocalId, request);
-				}
+				} 
 			}
 		}
 	}
@@ -81,28 +68,33 @@ public class RequestHandler extends IntentService {
 		JSONObject from = req.optJSONObject("from");
 		JSONObject payload = req.optJSONObject("payload");
 		if(payload != null) {
-			MLocation location = mLocManager.getLocations("Dining Hall").get(0);
-			MUser user = mUserManager.getUser(from.optString("name"), 
-					from.optString("type"), from.optString("principal"));
-			if(user == null) {
-				// TODO: user not found, error response
-				return;
-			}
+			MLocation location = mLocManager.getLocation("arrillaga.stanford@gmail.com");
 			
-			MCheckinData checkin = new MCheckinData(user.id, 
-					location.id, System.currentTimeMillis(), null);
-			mCheckinManager.insertCheckin(checkin);
+			
+			MCheckinData checkin = new MCheckinData(
+					location.id, 
+					System.currentTimeMillis(), 
+					null,
+					from.optString("name"),
+					from.optString("type"),
+					from.optString("hash"),
+					payload.optString("dorm"),
+					payload.optString("department"));
+			mCheckinManager.checkin(checkin);
+			List<MCheckinData> checkins = mCheckinManager.findOpenCheckinForProfile(
+					location.id, checkin.userDorm, checkin.userDepartment);
 			Log.i(TAG, "new checkin inserted");
 			
-			List<MUser> users = findSimilarUsersAt(user, location.id);
 			JSONObject res = new JSONObject();
 			try {
 				JSONArray arr = new JSONArray();
-				for(MUser u : users) {
+				for(MCheckinData c : checkins) {
 					JSONObject o = new JSONObject();
-					o.put("name", u.name);
-					o.put("principal", u.identifier);
-					o.put("type", u.type);
+					o.put("name", c.userName);
+					o.put("principal", c.userType);
+					o.put("type", c.userHash);
+					o.put("dorm", c.userDorm);
+					o.put("department", c.userDepartment);
 					arr.put(o);
 				}
 				res.put("res", arr);
@@ -112,39 +104,4 @@ public class RequestHandler extends IntentService {
 			feed.insert(new AppStateObj(res, null));
 		}
 	}
-	
-	
-	void onRegister(long localUserId, JSONObject req) {
-		JSONObject from = req.optJSONObject("from");
-		JSONObject payload = req.optJSONObject("payload");
-		String name = from.optString("name");
-		String type = from.optString("type");
-		String hash = from.optString("principal");
-		
-		if(!name.equals("") && !type.equals("") && !hash.equals("")) {
-			MUser newUser = new MUser(localUserId, name, type, hash);
-			// TODO: ensure only one user
-			mUserManager.ensureUser(newUser);
-			Log.i(TAG, "new user registered: " + name);
-			
-			MProfile profile = new MProfile(newUser.id, 
-					payload.optString("dorm"), payload.optString("department"));
-			mProfileManager.ensureProfile(profile);
-			Log.i(TAG, "new profile inserted "
-					+ profile.dorm + " " + profile.department);
-		}
-	}
-	
-	List<MUser> findSimilarUsersAt(MUser user, Long locationId) {
-		MProfile profile = mProfileManager.getProfile(user.id);
-		
-		// TODO: this is a naive way to find similar users.
-		List<Long> checkinUserIds = mCheckinManager.findOpenCheckinAt(locationId);
-		
-		List<Long> matchedUserIds = mProfileManager.getMatchingUserIds(checkinUserIds, 
-				profile.dorm, profile.department);
-		
-		return mUserManager.getUsers(matchedUserIds);
-	}
-
 }
