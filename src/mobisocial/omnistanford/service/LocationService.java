@@ -3,22 +3,26 @@ package mobisocial.omnistanford.service;
 import java.util.List;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import mobisocial.omnistanford.App;
-import mobisocial.omnistanford.OmniStanfordBaseActivity;
+import mobisocial.omnistanford.SettingsActivity;
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.DatabaseHelper;
+import mobisocial.omnistanford.db.DiscoveredPersonManager;
+import mobisocial.omnistanford.db.DiscoveryManager;
 import mobisocial.omnistanford.db.MAccount;
+import mobisocial.omnistanford.db.MDiscoveredPerson;
+import mobisocial.omnistanford.db.MDiscovery;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.db.MCheckinData;
+import mobisocial.omnistanford.db.MUserProperty;
+import mobisocial.omnistanford.db.PropertiesManager;
 import mobisocial.omnistanford.util.LocationUpdater;
 import mobisocial.omnistanford.util.Request;
+import mobisocial.omnistanford.util.ResponseHandler;
 import mobisocial.omnistanford.util.Util;
-import mobisocial.socialkit.musubi.DbFeed;
-import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.obj.MemObj;
+import mobisocial.socialkit.musubi.DbObj;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -31,15 +35,10 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
-import android.util.Base64;
 import android.util.Log;
 
 public class LocationService extends Service {
 	public static final String TAG = "LocationService";
-	
-	private static final String ACTION_CREATE_STANFORD_FEED =
-	        "musubi.intent.action.CREATE_STANFORD_FEED";
-	private static final String EXTRA_NAME = "mobisocial.omnistanford.json";
 	
 	private static final long INTERVAL = 1000 * 60 * 15;
 	private static final long SHORT_INTERVAL = 1000 * 60 * 5;
@@ -153,38 +152,6 @@ public class LocationService extends Service {
 		return mBinder;
 	}
 	
-	public void postToLocationFeed(MLocation location) {
-	    if (location.feedUri == null) {
-	        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
-	        JSONObject primary = new JSONObject();
-	        JSONArray arr = new JSONArray();
-	        JSONObject one = new JSONObject();
-	        try {
-	            primary.put("visible", false);
-	            one.put("hashed", Base64.encodeToString(
-	                    OmniStanfordBaseActivity.digestPrincipal("arrillaga.stanford@gmail.com"),
-	                    Base64.DEFAULT));
-	            one.put("name", "Arrillaga Family Dining Commons");
-	            one.put("type", location.accountType);
-	            arr.put(0, one);
-	            primary.put("members", arr);
-	            primary.put("sender", Util.getPickedAccountType(this));
-	        } catch (JSONException e) {
-	            Log.e(TAG, "JSON parse error", e);
-	            return;
-	        }
-
-	        Log.d(TAG, arr.toString());
-	        create.putExtra(EXTRA_NAME, primary.toString());
-	        //startActivityForResult(create, REQUEST_CREATE_FEED);
-	    }
-	    if (location.feedUri != null) {
-    	    Musubi musubi = Musubi.getInstance(this);
-    	    @SuppressWarnings("unused")
-            DbFeed feed = musubi.getFeed(location.feedUri);
-	    }
-	}
-	
 	LocationListener mLocationListener = new LocationListener() {
 	    private static final int TWO_MINUTES = 1000 * 60 * 2;
 	    Location mCurrent = null;
@@ -261,18 +228,29 @@ public class LocationService extends Service {
 			            MAccount acct = Util.loadAccount(LocationService.this);
 			            if (acct != null) {
 			                data.accountId = acct.id;
+                            
+                            // Check in locally
+                            cm.insertCheckin(data);
 			                
 			                // Check in remotely
-			                // TODO: send according to privacy settings
-//			                Request request = new Request("checkin");
-//                            request.addParam("lat", new Double(mCurrent.getLatitude()).toString());
-//                            request.addParam("lon", new Double(mCurrent.getLongitude()).toString());
-//			                Musubi musubi = Musubi.getInstance(LocationService.this);
-//			                DbFeed feed = musubi.getFeed(match.feedUri);
-//			                feed.postObj(new MemObj("omnistanford", request.toJSON(LocationService.this)));
-//                            
-//                            // Check in locally
-//                            cm.insertCheckin(data);
+			                PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
+			                Request request = new Request(match.principal, "checkin", mResponseHandler);
+			                request.addParam("id", new Long(data.id).toString());
+			                MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
+			                if (dorm != null) {
+			                    request.addParam(SettingsActivity.RESIDENCE, dorm.value);
+			                }
+			                MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
+			                if (department != null) {
+			                    request.addParam(SettingsActivity.DEPARTMENT, department.value);
+			                }
+			                MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
+			                if (enabled != null) {
+			                    boolean shouldSend = "true".equals(enabled.value) ? true : false;
+			                    if (shouldSend) {
+		                            request.send(LocationService.this);
+			                    }
+			                }
 			            }
 			        }
 			    } else {
@@ -314,6 +292,50 @@ public class LocationService extends Service {
 		public void onStatusChanged(String provider, int status, Bundle extras) {
 			Log.i(TAG, "status changed");
 		}
+		
+		// For a given checkin, get some discovery information set up
+		private ResponseHandler mResponseHandler = new ResponseHandler() {
+		    @Override
+            public void OnResponse(DbObj obj) {
+                Log.d(TAG, "got a response");
+                JSONObject json = obj.getJson();
+                if (!json.optString("id").equals("")) {
+                    long checkinId = Long.parseLong(json.optString("id"));
+                    JSONArray arr = json.optJSONArray("res");
+                    if (arr != null) {
+                        DiscoveredPersonManager dpm = new DiscoveredPersonManager(
+                                App.getDatabaseSource(LocationService.this));
+                        DiscoveryManager dm = new DiscoveryManager(
+                                App.getDatabaseSource(LocationService.this));
+                        PropertiesManager pm = new PropertiesManager(
+                                App.getDatabaseSource(LocationService.this));
+                        MUserProperty myDorm = pm.getProperty(SettingsActivity.RESIDENCE);
+                        MUserProperty myDept = pm.getProperty(SettingsActivity.DEPARTMENT);
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject match = arr.optJSONObject(i);
+                            if (match != null) {
+                                MDiscoveredPerson person = new MDiscoveredPerson();
+                                person.name = match.optString("name");
+                                person.identifier = match.optString("principal");
+                                person.accountType = match.optString("type");
+                                dpm.ensurePerson(person);
+                                MDiscovery discovery = new MDiscovery();
+                                discovery.checkinId = checkinId;
+                                discovery.personId = person.id;
+                                if (myDorm != null && myDorm.value.equals(match.optString("dorm"))) {
+                                    discovery.connectionType = SettingsActivity.RESIDENCE;
+                                } else if (myDept != null && myDorm.value.equals(match.optString("department"))) {
+                                    discovery.connectionType = SettingsActivity.DEPARTMENT;
+                                } else {
+                                    continue;
+                                }
+                                dm.insertDiscovery(discovery);
+                            }
+                        }
+                    }
+                }
+            }
+		};
 		
 	};
 }

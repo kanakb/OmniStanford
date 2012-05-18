@@ -18,9 +18,9 @@ import android.widget.Toast;
 public class SettingsActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "SettingsActivity";
     
-    private static final String DEPARTMENT = "department";
-    private static final String RESIDENCE = "residence";
-    private static final String ENABLED = "enabled";
+    public static final String DEPARTMENT = "department";
+    public static final String RESIDENCE = "dorm";
+    public static final String ENABLED = "enabled";
     
     private PropertiesManager mPm;
     

@@ -98,6 +98,9 @@ public class RequestHandler extends IntentService {
 					arr.put(o);
 				}
 				res.put("res", arr);
+				if (payload.has("id")) {
+				    res.put("id", payload.getString("id"));
+				}
 			} catch(JSONException e) {
 				Log.i(TAG, e.toString());
 			}
