@@ -88,6 +88,11 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             checkinButton.setOnClickListener(mCheckinClickListener);
             mButtonView.addView(checkinButton);
             
+            Button checkoutButton = new Button(this);
+            checkoutButton.setText("Checkout");
+            checkoutButton.setOnClickListener(mCheckoutClickListener);
+            mButtonView.addView(checkoutButton);
+            
 //            findViewById(R.id.settingsButton)
 //            	.setOnClickListener(new OnClickListener() {
 //    				@Override
@@ -188,6 +193,14 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 			req.addParam("loc_id", "1")
 				.addParam("dorm", "McFarland")
 				.addParam("department", "CS");
+			req.send(v.getContext());
+		}
+    };
+    
+    private OnClickListener mCheckoutClickListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			Request req = new Request("arrillaga.stanford@gmail.com", "checkout", null);
 			req.send(v.getContext());
 		}
     };

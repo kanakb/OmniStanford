@@ -60,17 +60,19 @@ public class RequestHandler extends IntentService {
 				
 				if(route.equals("checkin")) {
 					onCheckin(requesterLocalId, request, feed);
-				} 
+				} else if (route.equals("checkout")) {
+					onCheckout(requesterLocalId, request, feed);
+				}
 			}
 		}
 	}
+	
 	
 	void onCheckin(long localUserId, JSONObject req, DbFeed feed) {
 		JSONObject from = req.optJSONObject("from");
 		JSONObject payload = req.optJSONObject("payload");
 		if(payload != null) {
 			MLocation location = mLocManager.getLocation("arrillaga.stanford@gmail.com");
-			
 			
 			MCheckinData checkin = new MCheckinData(
 					location.id, 
@@ -107,6 +109,32 @@ public class RequestHandler extends IntentService {
 			}
 			feed.insert(new AppStateObj(res, null));
 			getContentResolver().notifyChange(Uri.withAppendedPath(OmniStanfordContentProvider.CONTENT_URI, "checkins"), null);
+		}
+	}
+	
+	void onCheckout(long localUserId, JSONObject req, DbFeed feed) {
+		JSONObject from = req.optJSONObject("from");
+		if(from != null) {
+			MLocation location = mLocManager.getLocation("arrillaga.stanford@gmail.com");
+			MCheckinData checkin = mCheckinManager.findOpenCheckinForUser(location.id, 
+					from.optString("name"), from.optString("type"), from.optString("hash"));
+			if(checkin != null) {
+				checkin.exitTime = System.currentTimeMillis();
+				mCheckinManager.updateCheckin(checkin);
+				Log.i(TAG, "checkout inserted");
+
+				
+				JSONObject res = new JSONObject();
+				try {
+					res.put("res", "true");
+				} catch(JSONException e) {
+					Log.i(TAG, e.toString());
+				}
+				feed.insert(new AppStateObj(res, null));
+				getContentResolver().notifyChange(Uri.withAppendedPath(OmniStanfordContentProvider.CONTENT_URI, "checkins"), null);
+			} else {
+				// no checkin found. send false
+			}
 		}
 	}
 }
