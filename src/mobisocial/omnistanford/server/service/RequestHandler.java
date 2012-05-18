@@ -11,6 +11,7 @@ import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.server.db.CheckinManager;
 import mobisocial.omnistanford.server.db.MCheckinData;
+import mobisocial.omnistanford.server.db.OmniStanfordContentProvider;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
@@ -105,6 +106,7 @@ public class RequestHandler extends IntentService {
 				Log.i(TAG, e.toString());
 			}
 			feed.insert(new AppStateObj(res, null));
+			getContentResolver().notifyChange(Uri.withAppendedPath(OmniStanfordContentProvider.CONTENT_URI, "checkins"), null);
 		}
 	}
 }

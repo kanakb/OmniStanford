@@ -15,13 +15,12 @@ import mobisocial.omnistanford.util.LocationUpdater;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.obj.MemObj;
-import android.app.Activity;
 import android.content.Intent;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -30,7 +29,7 @@ import android.view.View.OnClickListener;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class OmniStanfordBaseActivity extends Activity {
+public class OmniStanfordBaseActivity extends FragmentActivity {
     public static final String TAG = "OmniStanfordBaseActivity";
     
     protected static final String ACTION_CREATE_STANFORD_FEED = "musubi.intent.action.CREATE_STANFORD_FEED";
@@ -188,6 +187,8 @@ public class OmniStanfordBaseActivity extends Activity {
             throw new RuntimeException("Platform doesn't support sha256?!?!", e);
         }
     }
+    
+  
     
     protected class CreateFeedsTask extends AsyncTask<SQLiteOpenHelper, Void, LocationManager> {
         @Override

@@ -12,7 +12,6 @@ import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.FeedObserver;
 import mobisocial.socialkit.musubi.Musubi;
 import mobisocial.socialkit.obj.AppStateObj;
-import mobisocial.socialkit.obj.MemObj;
 
 import org.json.JSONException;
 import org.json.JSONObject;

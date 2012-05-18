@@ -12,6 +12,12 @@
         android:name=".App"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
+        
+        <provider
+        android:name=".server.db.OmniStanfordContentProvider"
+        android:authorities="mobisocial.omnistanford.db" />
+        
+        
         <activity
             android:name=".OmniStanfordActivity"
             android:label="@string/app_name" >

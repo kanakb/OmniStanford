@@ -12,6 +12,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,13 +31,15 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.LocationManager;
+import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.server.ui.CheckinListFragment;
 import mobisocial.omnistanford.service.LocationService;
 import mobisocial.omnistanford.util.Request;
+import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.obj.MemObj;
 
 public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
@@ -67,61 +72,69 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        mButtonView = new LinearLayout(this);
-        mButtonView.setOrientation(LinearLayout.VERTICAL);
-        
-        Button checkinButton = new Button(this);
-        checkinButton.setText("Checkin");
-        checkinButton.setOnClickListener(mCheckinClickListener);
-        mButtonView.addView(checkinButton);
-        
-//        findViewById(R.id.settingsButton)
-//        	.setOnClickListener(new OnClickListener() {
-//				@Override
-//				public void onClick(View arg0) {
-////					flipit();
-//				}
-//        	});
-        ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
-        
-        if (!Musubi.isMusubiInstalled(this)) {
-            return;
-        }
-        
-        mMusubi = Musubi.getInstance(this);
+        if(setServerMode()) {
+        	FragmentManager fragmentManager = getSupportFragmentManager();
+        	FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        TextView tv = new TextView(this);
-        tv.setTextSize(20.0f);
-        tv.setTextColor(Color.WHITE);
-        tv.setText("Recent Locations");
-        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-        List<MCheckinData> checkins = cm.getRecentCheckins();
-        for (MCheckinData data : checkins) {
-            if (data.exitTime == null) {
-                LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-                MLocation loc = lm.getLocation(data.locationId);
-                if (loc != null) {
-                    //tv.setText("Checked in at " + loc.name);
-                }
-                break;
+        	CheckinListFragment fragment = new CheckinListFragment();
+        	fragmentTransaction.add(R.id.contentArea, fragment);
+        	fragmentTransaction.commit();
+        } else {
+            mButtonView = new LinearLayout(this);
+            mButtonView.setOrientation(LinearLayout.VERTICAL);
+            
+            Button checkinButton = new Button(this);
+            checkinButton.setText("Checkin");
+            checkinButton.setOnClickListener(mCheckinClickListener);
+            mButtonView.addView(checkinButton);
+            
+//            findViewById(R.id.settingsButton)
+//            	.setOnClickListener(new OnClickListener() {
+//    				@Override
+//    				public void onClick(View arg0) {
+////    					flipit();
+//    				}
+//            	});
+            ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
+            
+            if (!Musubi.isMusubiInstalled(this)) {
+                return;
             }
+            
+            mMusubi = Musubi.getInstance(this);
+
+            TextView tv = new TextView(this);
+            tv.setTextSize(20.0f);
+            tv.setTextColor(Color.WHITE);
+            tv.setText("Recent Locations");
+            CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+            List<MCheckinData> checkins = cm.getRecentCheckins();
+            for (MCheckinData data : checkins) {
+                if (data.exitTime == null) {
+                    LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+                    MLocation loc = lm.getLocation(data.locationId);
+                    if (loc != null) {
+                        //tv.setText("Checked in at " + loc.name);
+                    }
+                    break;
+                }
+            }
+            mButtonView.addView(tv);
+            
+            showRecent(mButtonView);
+            
+//            LayoutInflater li = LayoutInflater.from(this);
+//            mSettingsView = li.inflate(R.layout.settings, null);
+//            mSettingsView.setVisibility(View.GONE);
+//            ((LinearLayout)findViewById(R.id.contentArea)).addView(mSettingsView);
+            
+            // Do some location updates
+            new CreateFeedsTask().execute(App.getDatabaseSource(this));
+            
+            bindServices();
         }
-        mButtonView.addView(tv);
-        
-        showRecent(mButtonView);
-        
-//        LayoutInflater li = LayoutInflater.from(this);
-//        mSettingsView = li.inflate(R.layout.settings, null);
-//        mSettingsView.setVisibility(View.GONE);
-//        ((LinearLayout)findViewById(R.id.contentArea)).addView(mSettingsView);
-        
-        
-        
-        // Do some location updates
-        new CreateFeedsTask().execute(App.getDatabaseSource(this));
-        
-        bindServices();
     }
+    
     
     private void showRecent(LinearLayout wrapper) {
         String[] from = new String[] { "title", "subtitle" };
@@ -182,6 +195,24 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private void bindServices() {
     	Intent locationService = new Intent(this, LocationService.class);
     	startService(locationService);
+    }
+    
+    private boolean setServerMode() {
+        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+        List<MLocation> locations = lm.getLocations();
+        MAccount account = Util.loadAccount(this);
+        if(account != null) {
+        	for(MLocation loc : locations) {
+        		String locHash = Base64.encodeToString(
+        				digestPrincipal(loc.principal), Base64.NO_WRAP);
+        		if(locHash.equals(account.identifier)) {
+        			((App)getApplicationContext()).setServerMode(true);
+        			return true;
+        		}
+        	}
+        }
+        
+        return false;
     }
     
 //    private Interpolator accelerator = new AccelerateInterpolator();
