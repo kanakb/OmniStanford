@@ -5,6 +5,7 @@
     <string name="app_name">OmniStanford</string>
     <string name="home_button">Home</string>
     <string name="settings_button">Settings</string>
+    <string name="add_account_button">Add Account</string>
     <string name="connect">Connect…</string>
     <string name="select_contacts">Select Contacts</string>
     <string name="enable_share">Enable Location Sharing</string>

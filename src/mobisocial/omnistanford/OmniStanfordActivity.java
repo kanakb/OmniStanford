@@ -5,9 +5,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -16,12 +17,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Base64;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
@@ -47,7 +44,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private static final long MONTH = 1000 * 60 * 60 * 24 * 30;
     
     private Musubi mMusubi;
-    private View mSettingsView;
     private LinearLayout mButtonView;
     
     @Override
@@ -93,13 +89,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             checkoutButton.setOnClickListener(mCheckoutClickListener);
             mButtonView.addView(checkoutButton);
             
-//            findViewById(R.id.settingsButton)
-//            	.setOnClickListener(new OnClickListener() {
-//    				@Override
-//    				public void onClick(View arg0) {
-////    					flipit();
-//    				}
-//            	});
             ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
             
             if (!Musubi.isMusubiInstalled(this)) {
@@ -127,11 +116,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             mButtonView.addView(tv);
             
             showRecent(mButtonView);
-            
-//            LayoutInflater li = LayoutInflater.from(this);
-//            mSettingsView = li.inflate(R.layout.settings, null);
-//            mSettingsView.setVisibility(View.GONE);
-//            ((LinearLayout)findViewById(R.id.contentArea)).addView(mSettingsView);
             
             // Do some location updates
             new CreateFeedsTask().execute(App.getDatabaseSource(this));
@@ -186,6 +170,29 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         wrapper.addView(listView);
     }
     
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getSherlock().getMenuInflater();
+        inflater.inflate(R.menu.action_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_settings:
+            	Intent create = new Intent(this, SettingsActivity.class);
+            	startActivity(create);
+            	return true;
+            case R.id.menu_add_account:
+            	Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
+                startActivityForResult(picker, REQUEST_PICK_ID);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    
     private OnClickListener mCheckinClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -227,34 +234,4 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         
         return false;
     }
-    
-//    private Interpolator accelerator = new AccelerateInterpolator();
-//    private Interpolator decelerator = new DecelerateInterpolator();
-//    private void flipit() {
-//    	final View visibleList;
-//        final View invisibleList;
-//        if(mButtonView.getVisibility() == View.GONE) {
-//        	visibleList = mSettingsView;
-//        	invisibleList = mButtonView;
-//        } else {
-//        	invisibleList = mSettingsView;
-//        	visibleList = mButtonView;
-//        }
-//        ObjectAnimator visToInvis = ObjectAnimator.ofFloat(visibleList, "rotationY", 0f, 90f);
-//        visToInvis.setDuration(500);
-//        visToInvis.setInterpolator(accelerator);
-//        final ObjectAnimator invisToVis = ObjectAnimator.ofFloat(invisibleList, "rotationY",
-//                -90f, 0f);
-//        invisToVis.setDuration(500);
-//        invisToVis.setInterpolator(decelerator);
-//        visToInvis.addListener(new AnimatorListenerAdapter() {
-//            @Override
-//            public void onAnimationEnd(Animator anim) {
-//            	visibleList.setVisibility(View.GONE);
-//                invisToVis.start();
-//                invisibleList.setVisibility(View.VISIBLE);
-//            }
-//        });
-//        visToInvis.start();
-//    }
 }

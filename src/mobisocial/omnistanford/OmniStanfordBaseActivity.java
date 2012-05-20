@@ -10,13 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuInflater;
 
 import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.util.LocationUpdater;
-import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
 import android.content.Intent;
@@ -26,11 +23,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
-import android.view.View;
-import android.view.Window;
-import android.view.View.OnClickListener;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     public static final String TAG = "OmniStanfordBaseActivity";
@@ -41,34 +34,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     protected static final int REQUEST_PICK_ID = 2;
     protected static final String ACCOUNT_TYPE_STANFORD = "edu.stanford";
     protected static final String EXTRA_NAME = "mobisocial.omnistanford.json";
-    
-    private OnClickListener mPickerClickListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
-            startActivityForResult(picker, REQUEST_PICK_ID);
-        }
-    };
-    
-    private OnClickListener mHomeClickListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-        	if(!(v.getContext() instanceof OmniStanfordActivity)) {
-	            Intent home = new Intent(OmniStanfordBaseActivity.this, OmniStanfordActivity.class);
-	            startActivity(home);
-        	}
-        }
-    };
-    
-    private OnClickListener mSettingsClickListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-        	if(!(v.getContext() instanceof SettingsActivity)) {
-	            Intent create = new Intent(OmniStanfordBaseActivity.this, SettingsActivity.class);
-	            startActivity(create);
-        	}
-        }
-    };
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -96,8 +61,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                 for (int j = 0; j < names.size(); j++) {
                     Util.saveAccount(this, names.get(j), hashes.get(j), types.get(j));
                 }
-                
-                ((TextView)findViewById(R.id.accountPicker)).setText(names.get(i), TextView.BufferType.NORMAL);
                 
                 Util.setPickedAccount(this, names.get(i), types.get(i), hashes.get(i));
 
@@ -160,7 +123,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.main);
         
         LinearLayout variableBox = (LinearLayout)findViewById(R.id.contentArea);
@@ -170,23 +132,10 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
             return;
         }
         
-        findViewById(R.id.accountPicker).setOnClickListener(mPickerClickListener);
-        findViewById(R.id.homeButton).setOnClickListener(mHomeClickListener);
-        findViewById(R.id.settingsButton).setOnClickListener(mSettingsClickListener);
-        
         String currentName = Util.getPickedAccountName(this);
         if(currentName != null) {
-            ((TextView)findViewById(R.id.accountPicker)).setText(currentName, TextView.BufferType.NORMAL);
+        	getSupportActionBar().setTitle(currentName);
         }
-        
-        getSupportActionBar().setTitle("blabla");
-    }
-    
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getSherlock().getMenuInflater();
-        inflater.inflate(R.menu.action_menu, menu);
-        return true;
     }
     
     // TODO: remove this

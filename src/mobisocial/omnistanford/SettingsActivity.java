@@ -1,7 +1,10 @@
 package mobisocial.omnistanford;
 
+import com.actionbarsherlock.view.MenuItem;
+
 import mobisocial.omnistanford.db.MUserProperty;
 import mobisocial.omnistanford.db.PropertiesManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -119,6 +122,21 @@ public class SettingsActivity extends OmniStanfordBaseActivity {
         } else {
             mPm.insertProperty(new MUserProperty(ENABLED, new Boolean(true).toString()));
             checkbox.setChecked(true);
+        }
+        
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                Intent intent = new Intent(this, OmniStanfordActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

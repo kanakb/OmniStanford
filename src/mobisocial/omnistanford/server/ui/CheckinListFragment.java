@@ -49,6 +49,7 @@ public class CheckinListFragment extends ListFragment
 	 @Override
 	 public void onDestroy() {
 		 getActivity().getContentResolver().unregisterContentObserver(mObserver);
+		 super.onDestroy();
 	 }
 	 
 	static final String[] CHECKIN_PROJECTION = new String[] {
