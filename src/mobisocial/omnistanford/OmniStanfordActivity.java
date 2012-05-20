@@ -12,6 +12,7 @@ import com.actionbarsherlock.view.MenuItem;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -23,7 +24,6 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import mobisocial.omnistanford.db.CheckinManager;
@@ -33,6 +33,8 @@ import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.server.ui.CheckinListFragment;
 import mobisocial.omnistanford.service.LocationService;
+import mobisocial.omnistanford.ui.PullToRefreshListView;
+import mobisocial.omnistanford.ui.PullToRefreshListView.OnRefreshListener;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbFeed;
@@ -41,10 +43,13 @@ import mobisocial.socialkit.musubi.Musubi;
 public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
     
-    private static final long MONTH = 1000 * 60 * 60 * 24 * 30;
+    private static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
     
     private Musubi mMusubi;
     private LinearLayout mButtonView;
+    private List<HashMap<String, String>> mHms;
+    private HashMap<Long, Long> mIdMap;
+    private PullToRefreshListView mListView;
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -120,7 +125,39 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             // Do some location updates
             new CreateFeedsTask().execute(App.getDatabaseSource(this));
             
-            bindServices();
+            bindServices(null);
+        }
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        
+        if (!Musubi.isMusubiInstalled(this)) {
+            return;
+        }
+        
+        new CreateFeedsTask().execute(App.getDatabaseSource(this));
+        
+        if (mHms == null) {
+            mHms = new ArrayList<HashMap<String, String>>();
+        }
+        constructMap();
+    }
+    
+    private void constructMap() {
+        mHms.clear();
+        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+        List<MCheckinData> checkins = cm.getRecentCheckins(MONTH);
+        mIdMap = new HashMap<Long, Long>();
+        for (MCheckinData checkin : checkins) {
+            HashMap<String, String> hm = new HashMap<String, String>();
+            MLocation loc = lm.getLocation(checkin.locationId);
+            hm.put("title", loc.name);
+            hm.put("subtitle", new Date(checkin.entryTime).toString());
+            mIdMap.put(new Long(mHms.size()), checkin.id);
+            mHms.add(hm);
         }
     }
     
@@ -128,19 +165,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private void showRecent(LinearLayout wrapper) {
         String[] from = new String[] { "title", "subtitle" };
         int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle };
-        List<HashMap<String, String>> hms = new ArrayList<HashMap<String, String>>();
-        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-        List<MCheckinData> checkins = cm.getRecentCheckins(MONTH);
-        final HashMap<Long, Long> idMap = new HashMap<Long, Long>();
-        for (MCheckinData checkin : checkins) {
-            HashMap<String, String> hm = new HashMap<String, String>();
-            MLocation loc = lm.getLocation(checkin.locationId);
-            hm.put("title", loc.name);
-            hm.put("subtitle", new Date(checkin.entryTime).toString());
-            idMap.put(new Long(hms.size()), checkin.id);
-            hms.add(hm);
+        if (mHms == null) {
+            mHms = new ArrayList<HashMap<String, String>>();
         }
+        constructMap();
         /*HashMap<String, String> hm = new HashMap<String, String>();
         hm.put("title", "Gates Building");
         hm.put("subtitle", new Date(0L).toString());
@@ -151,23 +179,29 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         hms.add(hm2);*/
         
         // TODO: this should be pull to refresh
-        ListView listView = new ListView(this);
-        listView.setAdapter(new SimpleAdapter(this, hms, R.layout.plain_list_item, from, to));
-        listView.setOnItemClickListener(new OnItemClickListener() {
+        mListView = new PullToRefreshListView(this);
+        mListView.setAdapter(new SimpleAdapter(this, mHms, R.layout.plain_list_item, from, to));
+        mListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position,
                     long id) {
                 //do something
                 Log.d(TAG, "Selected " + position);
                 Intent intent = new Intent(OmniStanfordActivity.this, SelectContactsActivity.class);
-                if (idMap.containsKey(new Long(position))) {
-                    intent.putExtra("checkin", idMap.get(new Long(position)).longValue());
+                if (mIdMap.containsKey(new Long(position))) {
+                    intent.putExtra("checkin", mIdMap.get(new Long(position)).longValue());
                 }
                 startActivity(intent);
             }
         });
+        mListView.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                new RefreshListTask().execute(1L);
+            }
+        });
         
-        wrapper.addView(listView);
+        wrapper.addView(mListView);
     }
     
     @Override
@@ -201,19 +235,43 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 				.addParam("dorm", "McFarland")
 				.addParam("department", "CS");
 			req.send(v.getContext());
+			bindServices("locationUpdate");
 		}
     };
     
     private OnClickListener mCheckoutClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			Request req = new Request("arrillaga.stanford@gmail.com", "checkout", null);
-			req.send(v.getContext());
+		    Request req = new Request("arrillaga.stanford@gmail.com", "checkout", null);
+            req.send(v.getContext());
+            
+		    Log.d(TAG, "Checkout");
+            // Exit open checkins
+		    CheckinManager cm = new CheckinManager(
+		            App.getDatabaseSource(OmniStanfordActivity.this));
+		    LocationManager lm = new LocationManager(
+		            App.getDatabaseSource(OmniStanfordActivity.this));
+            List<MCheckinData> checkins = cm.getRecentCheckins();
+            for (MCheckinData data : checkins) {
+                if (data.exitTime == null || data.exitTime == 0) {
+                    data.exitTime = System.currentTimeMillis();
+                    cm.updateCheckin(data);
+                    MLocation loc = lm.getLocation(data.locationId);
+                    Log.d(TAG, "Checking out from " + loc.name);
+                    Request request = new Request(loc.principal, "checkout", null);
+                    request.send(v.getContext());
+                } else {
+                    Log.d(TAG, "exit time: " + data.exitTime);
+                }
+            }
 		}
     };
     
-    private void bindServices() {
+    private void bindServices(String extra) {
     	Intent locationService = new Intent(this, LocationService.class);
+    	if (extra != null) {
+    	    locationService.putExtra(extra, true);
+    	}
     	startService(locationService);
     }
     
@@ -233,5 +291,19 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         }
         
         return false;
+    }
+    
+    class RefreshListTask extends AsyncTask<Long, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Long... params) {
+            constructMap();
+            return true;
+        }
+        @Override
+        protected void onPostExecute(Boolean status) {
+            if (status) {
+                mListView.onRefreshComplete();
+            }
+        }
     }
 }

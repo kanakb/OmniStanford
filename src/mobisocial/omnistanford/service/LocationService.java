@@ -33,6 +33,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
@@ -41,7 +42,7 @@ public class LocationService extends Service {
 	public static final String TAG = "LocationService";
 	
 	private static final long INTERVAL = 1000 * 60 * 15;
-	private static final long SHORT_INTERVAL = 1000 * 60 * 5;
+	private static final long SHORT_INTERVAL = 1000 * 60 * 4;
 	
 	private Integer mUpdateCount = 0;
 	private static final int MAX_UPDATE_COUNT = 4;
@@ -51,6 +52,9 @@ public class LocationService extends Service {
 	        new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
 	
 	private final IBinder mBinder = new LocationBinder();
+	
+	private Handler mFastHandler;
+	private Handler mSlowHandler;
 	
 	public class LocationBinder extends Binder {
 		LocationBinder getService() {
@@ -89,6 +93,7 @@ public class LocationService extends Service {
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
                 mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
             } else {
+                Log.d(TAG, "Not at Stanford");
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
             }
         }
@@ -96,26 +101,18 @@ public class LocationService extends Service {
 	
 	@Override
 	public void onCreate() {
-	    Log.d(TAG, "onCreate called");
+        Log.d(TAG, "onCreate called");
+	    
+	    mFastHandler = new Handler();
+	    mSlowHandler = new Handler();
+	    
 	    mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 	    mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
 	    AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
         long currentElapsedTime = SystemClock.elapsedRealtime();
         
-        Intent locationUpdateIntent = new Intent(this, LocationService.class);
-        locationUpdateIntent.putExtra("locationUpdate", true);
-        PendingIntent locationSender = PendingIntent.getService(this, 0, locationUpdateIntent, 0);
-        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
-                SHORT_INTERVAL, locationSender);
-        setInnerLocationState();
-        
-        Intent periodicLocationUpdateIntent = new Intent(this, LocationService.class);
-        locationUpdateIntent.putExtra("periodicLocationUpdate", true);
-        PendingIntent periodicLocationSender =
-                PendingIntent.getService(this, 0, periodicLocationUpdateIntent, 0);
-        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
-                INTERVAL, periodicLocationSender);
-        setOuterLocationState();
+        mFastUpdater.run();
+        mSlowUpdater.run();
 	    
 	    Intent locationFetchIntent = new Intent(this, LocationService.class);
 	    locationFetchIntent.putExtra("locationFetch", true);
@@ -152,7 +149,27 @@ public class LocationService extends Service {
 		return mBinder;
 	}
 	
-	LocationListener mLocationListener = new LocationListener() {
+	private Runnable mFastUpdater = new Runnable() {
+	    @Override
+	    public void run() {
+	        Intent intent = new Intent(LocationService.this, LocationService.class);
+	        intent.putExtra("locationUpdate", true);
+	        startService(intent);
+	        mFastHandler.postDelayed(this, SHORT_INTERVAL);
+	    }
+	};
+	
+	private Runnable mSlowUpdater = new Runnable() {
+	    @Override
+	    public void run() {
+            Intent intent = new Intent(LocationService.this, LocationService.class);
+            intent.putExtra("periodicLocationUpdate", true);
+            startService(intent);
+	        mSlowHandler.postDelayed(this, INTERVAL);
+	    }
+	};
+	
+	private LocationListener mLocationListener = new LocationListener() {
 	    private static final int TWO_MINUTES = 1000 * 60 * 2;
 	    Location mCurrent = null;
 
@@ -215,10 +232,13 @@ public class LocationService extends Service {
 		public void onLocationChanged(Location location) {
 			Log.i(TAG, "received location + " + location.toString());
 			if (isBetterLocation(location, mCurrent)) {
+			    Log.i(TAG, "location is better");
 			    mCurrent = location;
                 CheckinManager cm = new CheckinManager(App.getDatabaseSource(LocationService.this));
 			    MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
-			    if (match != null && match.feedUri != null) {
+			    if (match != null && match.feedUri == null) {
+			        Log.d(TAG, "match found, no uri set");
+			    } else if (match != null && match.feedUri != null) {
 			        Log.d(TAG, "Found " + match.name);
 			        MCheckinData data = cm.getRecentCheckin(match.id);
 			        if (data == null) {
@@ -231,6 +251,7 @@ public class LocationService extends Service {
                             
                             // Check in locally
                             cm.insertCheckin(data);
+			                Log.d(TAG, "inserted with id " + data.id + " at " + data.entryTime);
 			                
 			                // Check in remotely
 			                PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
@@ -257,9 +278,12 @@ public class LocationService extends Service {
 			        // Exit open checkins
 			        List<MCheckinData> checkins = cm.getRecentCheckins();
 			        for (MCheckinData data : checkins) {
-			            if (data.exitTime == null) {
+			            if (data.exitTime == null || data.exitTime == 0) {
 			                data.exitTime = System.currentTimeMillis();
 			                cm.updateCheckin(data);
+			                MLocation loc = mLm.getLocation(data.locationId);
+			                Request request = new Request(loc.principal, "checkout", null);
+			                request.send(LocationService.this);
 			            }
 			        }
 			    }
@@ -336,6 +360,5 @@ public class LocationService extends Service {
                 }
             }
 		};
-		
 	};
 }

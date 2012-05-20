@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
 
 public class CheckinManager extends ManagerBase {
 
@@ -18,7 +19,8 @@ public class CheckinManager extends ManagerBase {
     private static final int entryTime = 3;
     private static final int exitTime = 4;
     
-    private static final long DAY = 1000 * 60 * 60 * 24;
+    private static final long DAY = 1000L * 60L * 60L * 24L;
+    private static final long HOUR = 1000L * 60L * 60L;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
@@ -90,7 +92,7 @@ public class CheckinManager extends ManagerBase {
     }
     
     public MCheckinData getRecentCheckin(Long locationId) {
-        Long cutoff = System.currentTimeMillis() - DAY;
+        Long cutoff = System.currentTimeMillis() - HOUR;
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +
@@ -114,6 +116,9 @@ public class CheckinManager extends ManagerBase {
     
     public List<MCheckinData> getRecentCheckins(long duration) {
         Long cutoff = System.currentTimeMillis() - duration;
+        Log.d(TAG, "time: " + System.currentTimeMillis());
+        Log.d(TAG, "duration: " + duration);
+        Log.d(TAG, "cutoff: " + cutoff);
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_ENTRY_TIME + ">?";

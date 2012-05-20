@@ -94,8 +94,8 @@ public class RequestHandler extends IntentService {
 				for(MCheckinData c : checkins) {
 					JSONObject o = new JSONObject();
 					o.put("name", c.userName);
-					o.put("principal", c.userType);
-					o.put("type", c.userHash);
+					o.put("principal", c.userHash);
+					o.put("type", c.userType);
 					o.put("dorm", c.userDorm);
 					o.put("department", c.userDepartment);
 					arr.put(o);
