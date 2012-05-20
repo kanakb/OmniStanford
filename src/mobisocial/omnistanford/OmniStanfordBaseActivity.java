@@ -9,6 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+
 import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.util.LocationUpdater;
@@ -20,7 +24,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -29,7 +32,7 @@ import android.view.View.OnClickListener;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class OmniStanfordBaseActivity extends FragmentActivity {
+public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     public static final String TAG = "OmniStanfordBaseActivity";
     
     protected static final String ACTION_CREATE_STANFORD_FEED = "musubi.intent.action.CREATE_STANFORD_FEED";
@@ -175,6 +178,15 @@ public class OmniStanfordBaseActivity extends FragmentActivity {
         if(currentName != null) {
             ((TextView)findViewById(R.id.accountPicker)).setText(currentName, TextView.BufferType.NORMAL);
         }
+        
+        getSupportActionBar().setTitle("blabla");
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getSherlock().getMenuInflater();
+        inflater.inflate(R.menu.action_menu, menu);
+        return true;
     }
     
     // TODO: remove this
