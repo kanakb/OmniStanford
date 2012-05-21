@@ -152,6 +152,24 @@ public class AccountManager extends ManagerBase {
         }
     }
     
+    public MAccount getAccount(String accountType, String hashed) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MAccount.TABLE;
+        String selection = MAccount.COL_ACCOUNT_TYPE + "=? AND " +
+                MAccount.COL_IDENTIFIER + "=?";
+        String[] selectionArgs = new String[] { accountType, hashed };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+    
     private MAccount fillInStandardFields(Cursor c) {
         MAccount acc = new MAccount();
         acc.id = c.getLong(_id);

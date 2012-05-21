@@ -37,7 +37,6 @@ public class CheckinManager extends ManagerBase {
     	MCheckinData.COL_USER_DEPARTMENT
     };
 
-    @SuppressWarnings("unused")
     private SQLiteStatement mUpdateCheckin;
     private SQLiteStatement mInsertCheckin;
     

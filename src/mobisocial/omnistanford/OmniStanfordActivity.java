@@ -146,20 +146,22 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     }
     
     private void constructMap(List<MCheckinData> checkins) {
-        mHms.clear();
-        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-        if (checkins == null) {
-            CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-            checkins = cm.getRecentCheckins(MONTH);
-        }
-        mIdMap = new HashMap<Long, Long>();
-        for (MCheckinData checkin : checkins) {
-            HashMap<String, String> hm = new HashMap<String, String>();
-            MLocation loc = lm.getLocation(checkin.locationId);
-            hm.put("title", loc.name);
-            hm.put("subtitle", new Date(checkin.entryTime).toString());
-            mIdMap.put(new Long(mHms.size()), checkin.id);
-            mHms.add(hm);
+        synchronized(this) {
+            mHms.clear();
+            LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+            if (checkins == null) {
+                CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+                checkins = cm.getRecentCheckins(MONTH);
+            }
+            mIdMap = new HashMap<Long, Long>();
+            for (MCheckinData checkin : checkins) {
+                HashMap<String, String> hm = new HashMap<String, String>();
+                MLocation loc = lm.getLocation(checkin.locationId);
+                hm.put("title", loc.name);
+                hm.put("subtitle", new Date(checkin.entryTime).toString());
+                mIdMap.put(new Long(mHms.size()), checkin.id);
+                mHms.add(hm);
+            }
         }
     }
     
@@ -167,8 +169,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private void showRecent(LinearLayout wrapper) {
         String[] from = new String[] { "title", "subtitle" };
         int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle };
-        if (mHms == null) {
-            mHms = new ArrayList<HashMap<String, String>>();
+        synchronized(this) {
+            if (mHms == null) {
+                mHms = new ArrayList<HashMap<String, String>>();
+            }
         }
         constructMap(null);
         /*HashMap<String, String> hm = new HashMap<String, String>();

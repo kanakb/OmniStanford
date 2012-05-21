@@ -138,6 +138,15 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
         }
     }
     
+    @Override
+    public void onResume() {
+        super.onResume();
+        String currentName = Util.getPickedAccountName(this);
+        if(currentName != null) {
+            getSupportActionBar().setTitle(currentName);
+        }
+    }
+    
     // TODO: remove this
     public static byte[] digestPrincipal(String principal) {
         try {

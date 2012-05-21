@@ -241,7 +241,8 @@ public class LocationService extends Service {
 			    } else if (match != null && match.feedUri != null) {
 			        Log.d(TAG, "Found " + match.name);
 			        MCheckinData data = cm.getRecentCheckin(match.id);
-			        if (data == null) {
+			        // Only update if no recent checkins, or already checked out
+			        if (data == null || (data.exitTime != null && data.exitTime != 0L)) {
 			            data = new MCheckinData();
 			            data.entryTime = System.currentTimeMillis();
 			            data.locationId = match.id;
@@ -273,6 +274,26 @@ public class LocationService extends Service {
 			                    }
 			                }
 			            }
+			        } else if (data != null) {
+			            // Only check in remotely
+                        PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
+                        Request request = new Request(match.principal, "checkin", mResponseHandler);
+                        request.addParam("id", new Long(data.id).toString());
+                        MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
+                        if (dorm != null) {
+                            request.addParam(SettingsActivity.RESIDENCE, dorm.value);
+                        }
+                        MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
+                        if (department != null) {
+                            request.addParam(SettingsActivity.DEPARTMENT, department.value);
+                        }
+                        MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
+                        if (enabled != null) {
+                            boolean shouldSend = "true".equals(enabled.value) ? true : false;
+                            if (shouldSend) {
+                                request.send(LocationService.this);
+                            }
+                        }
 			        }
 			    } else {
 			        // Exit open checkins

@@ -20,7 +20,6 @@ public class CheckinManager extends ManagerBase {
     private static final int exitTime = 4;
     
     private static final long DAY = 1000L * 60L * 60L * 24L;
-    private static final long HOUR = 1000L * 60L * 60L;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
@@ -91,8 +90,25 @@ public class CheckinManager extends ManagerBase {
         }
     }
     
+    public MCheckinData getCheckin(Long id) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MCheckinData.TABLE;
+        String selection = MCheckinData.COL_ID + "=?";
+        String[] selectionArgs = new String[] { id.toString() };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+    
     public MCheckinData getRecentCheckin(Long locationId) {
-        Long cutoff = System.currentTimeMillis() - HOUR;
+        Long cutoff = System.currentTimeMillis() - DAY;
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +

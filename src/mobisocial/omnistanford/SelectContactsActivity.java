@@ -3,27 +3,16 @@ package mobisocial.omnistanford;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import mobisocial.omnistanford.db.LocationManager;
-import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.db.CheckinManager;
+import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.ui.PullToRefreshListView;
 import mobisocial.omnistanford.ui.PullToRefreshListView.OnRefreshListener;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.ResponseHandler;
-import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.DbObj;
-import mobisocial.socialkit.musubi.FeedObserver;
-import mobisocial.socialkit.musubi.Musubi;
-import mobisocial.socialkit.obj.MemObj;
-
-import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -41,10 +30,27 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     private Request mReq;
     private List<HashMap<String, String>> mList;
     private SimpleAdapter mAdapter;
+    private CheckinManager mCm;
+    private MCheckinData mCheckin;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Don't bother if there's no data
+        if (getIntent() == null || !getIntent().hasExtra("checkin")) {
+            finish();
+            return;
+        }
+        
+        // Get valid checkin data
+        mCm = new CheckinManager(App.getDatabaseSource(this));
+        mCheckin = mCm.getCheckin(getIntent().getLongExtra("checkin", -1));
+        if (mCheckin == null) {
+            finish();
+            return;
+        }
+        
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
         
         String[] from = new String[] { "separator", "title", "subtitle" };
