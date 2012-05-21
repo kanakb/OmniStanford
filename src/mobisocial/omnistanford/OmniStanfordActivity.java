@@ -142,14 +142,16 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         if (mHms == null) {
             mHms = new ArrayList<HashMap<String, String>>();
         }
-        constructMap();
+        constructMap(null);
     }
     
-    private void constructMap() {
+    private void constructMap(List<MCheckinData> checkins) {
         mHms.clear();
-        CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
         LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-        List<MCheckinData> checkins = cm.getRecentCheckins(MONTH);
+        if (checkins == null) {
+            CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+            checkins = cm.getRecentCheckins(MONTH);
+        }
         mIdMap = new HashMap<Long, Long>();
         for (MCheckinData checkin : checkins) {
             HashMap<String, String> hm = new HashMap<String, String>();
@@ -168,7 +170,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         if (mHms == null) {
             mHms = new ArrayList<HashMap<String, String>>();
         }
-        constructMap();
+        constructMap(null);
         /*HashMap<String, String> hm = new HashMap<String, String>();
         hm.put("title", "Gates Building");
         hm.put("subtitle", new Date(0L).toString());
@@ -293,17 +295,17 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         return false;
     }
     
-    class RefreshListTask extends AsyncTask<Long, Void, Boolean> {
+    class RefreshListTask extends AsyncTask<Long, Void, List<MCheckinData>> {
         @Override
-        protected Boolean doInBackground(Long... params) {
-            constructMap();
-            return true;
+        protected List<MCheckinData> doInBackground(Long... params) {
+            CheckinManager cm = new CheckinManager(
+                    App.getDatabaseSource(OmniStanfordActivity.this));
+            return cm.getRecentCheckins(MONTH);
         }
         @Override
-        protected void onPostExecute(Boolean status) {
-            if (status) {
-                mListView.onRefreshComplete();
-            }
+        protected void onPostExecute(List<MCheckinData> data) {
+            constructMap(data);
+            mListView.onRefreshComplete();
         }
     }
 }
