@@ -12,8 +12,9 @@
         android:layout_height="wrap_content"
         android:textColor="@android:color/white" />
  
-    <TextView
+    <CheckedTextView
         android:id="@+id/title"
+        android:checkMark="?android:attr/listChoiceIndicatorMultiple"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"

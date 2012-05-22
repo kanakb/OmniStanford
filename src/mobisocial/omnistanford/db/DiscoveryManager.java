@@ -56,12 +56,7 @@ public class DiscoveryManager extends ManagerBase {
     }
     
     public List<MDiscovery> getDiscoveries(Long checkin) {
-        SQLiteDatabase db = initializeDatabase();
-        String table = MDiscovery.TABLE;
-        String selection = MDiscovery.COL_CHECKIN_ID + "=?";
-        String[] selectionArgs = new String[] { checkin.toString() };
-        String orderBy = MDiscovery.COL_CONNECTION_TYPE;
-        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
+        Cursor c = getDiscoveriesCursor(checkin);
         try {
             List<MDiscovery> result = new ArrayList<MDiscovery>();
             while (c.moveToNext()) {
@@ -73,7 +68,16 @@ public class DiscoveryManager extends ManagerBase {
         }
     }
     
-    private MDiscovery fillInStandardFields(Cursor c) {
+    public Cursor getDiscoveriesCursor(Long checkin) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MDiscovery.TABLE;
+        String selection = MDiscovery.COL_CHECKIN_ID + "=?";
+        String[] selectionArgs = new String[] { checkin.toString() };
+        String orderBy = MDiscovery.COL_CONNECTION_TYPE;
+        return db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
+    }
+    
+    public MDiscovery fillInStandardFields(Cursor c) {
         MDiscovery discovery = new MDiscovery();
         discovery.id = c.getLong(_id);
         discovery.checkinId = c.getLong(checkinId);

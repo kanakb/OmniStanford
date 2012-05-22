@@ -1,8 +1,6 @@
 package mobisocial.omnistanford;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,26 +20,32 @@ import mobisocial.omnistanford.ui.PullToRefreshListView.OnRefreshListener;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.ResponseHandler;
 import mobisocial.socialkit.musubi.DbObj;
+import android.content.Context;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CheckedTextView;
+import android.widget.CursorAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 public class SelectContactsActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "SelectContactsActivity";
     private PullToRefreshListView mListView;
-    private List<HashMap<String, String>> mList;
-    private SimpleAdapter mAdapter;
+    private CursorAdapter mCursorAdapter;
     private CheckinManager mCm;
     private MCheckinData mCheckin;
     private Request mRequest;
     private boolean mLocal;
+    private DiscoveryManager mDm;
+    private HashMap<Long, Long> mPersonMap;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,6 +57,9 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             return;
         }
         
+        mDm = new DiscoveryManager(App.getDatabaseSource(this));
+        mPersonMap = new HashMap<Long, Long>();
+        
         // Get valid checkin data
         mCm = new CheckinManager(App.getDatabaseSource(this));
         mCheckin = mCm.getCheckin(getIntent().getLongExtra("checkin", -1));
@@ -63,29 +70,26 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         mLocal = (mCheckin.exitTime == null || mCheckin.exitTime == 0L) ? false : true;
         
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
-        
-        String[] from = new String[] { "separator", "title", "subtitle" };
-        int[] to = new int[] { R.id.separator, R.id.title, R.id.subtitle };
-        
-        mList = new ArrayList<HashMap<String, String>>();
-        updateLocal();
+        mCursorAdapter = new ContactsAdapter(this, mDm.getDiscoveriesCursor(mCheckin.id));
+        alternateUpdate();
         
         mListView = new PullToRefreshListView(this);
-        mAdapter = new SimpleAdapter(this, mList, R.layout.list_item, from, to);
-        mListView.setAdapter(mAdapter);
+        mListView.setAdapter(mCursorAdapter);
         mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         mListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-                    long arg3) {
-                TextView selected = (TextView) arg1.findViewById(R.id.title);
+            public void onItemClick(AdapterView<?> parent, View view, int position,
+                    long id) {
+                DiscoveryHolder holder = (DiscoveryHolder)view.getTag();
+                mPersonMap.put(id, holder.personId);
+                CheckedTextView selected = (CheckedTextView) view.findViewById(R.id.title);
                 Log.d(TAG, selected.getText().toString());
-                Log.d(TAG, arg2 + " " + arg3);
-                for (long id : mListView.getCheckedItemIds()) {
-                    Log.d(TAG, "selected" + id);
+                Log.d(TAG, position + " " + id);
+                for (long selId : mListView.getCheckedItemIds()) {
+                    Log.d(TAG, "selected " + selId);
                 }
+                //parent.getChildAt(position).setBackgroundColor(Color.BLUE);
                 //selected.setTextColor(getResources().getColor(android.R.color.darker_gray));
-                //selected.setBackgroundColor(getResources().getColor(android.R.color.background_light));
             }
         });
         
@@ -100,33 +104,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         Log.d(TAG, "Showing list");
     }
     
-    private void updateLocal() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mList.clear();
-                DiscoveryManager dm = new DiscoveryManager(
-                        App.getDatabaseSource(SelectContactsActivity.this));
-                DiscoveredPersonManager dpm = new DiscoveredPersonManager(
-                        App.getDatabaseSource(SelectContactsActivity.this));
-                PropertiesManager pm = new PropertiesManager(
-                        App.getDatabaseSource(SelectContactsActivity.this));
-                List<MDiscovery> discoveries = dm.getDiscoveries(mCheckin.id);
-                for (MDiscovery disc : discoveries) {
-                    MDiscoveredPerson person = dpm.getPerson(disc.personId);
-                    HashMap<String, String> hm = new HashMap<String, String>();
-                    MUserProperty prop = pm.getProperty(disc.connectionType);
-                    if (prop != null) {
-                        hm.put("separator", prop.value);
-                    } else {
-                        hm.put("separator", disc.connectionType);
-                    }
-                    hm.put("title", person.name);
-                    hm.put("subtitle", person.accountType);
-                    mList.add(hm);
-                }
-            }
-        });
+    private void alternateUpdate() {
+        Cursor c = mDm.getDiscoveriesCursor(mCheckin.id);
+        if (c != null) {
+            startManagingCursor(c);
+        }
+        mCursorAdapter.changeCursor(c);
     }
 
     class GetDataTask extends AsyncTask<Long, Void, Boolean> {
@@ -215,7 +198,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    updateLocal();
+                    alternateUpdate();
                     mListView.onRefreshComplete();
                 }
             });
@@ -224,7 +207,95 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     
     @Override
     public void onDestroy() {
-        mRequest.cancelUpdates();
+        if (mRequest != null) {
+            mRequest.cancelUpdates();
+        }
         super.onDestroy();
+    }
+    
+    private static class DiscoveryHolder {
+        public TextView separator;
+        public CheckedTextView titleView;
+        public TextView subtitleView;
+        public Long personId;
+    }
+    
+    private class ContactsAdapter extends CursorAdapter {
+        private String mTitle = "";
+        private String mPreviousTitle = "";
+        private DiscoveredPersonManager mDpm;
+        private PropertiesManager mPm;
+        
+        public ContactsAdapter(Context context, Cursor c) {
+            super(context, c);
+            mDpm = new DiscoveredPersonManager(
+                    App.getDatabaseSource(SelectContactsActivity.this));
+            mPm = new PropertiesManager(
+                    App.getDatabaseSource(SelectContactsActivity.this));
+        }
+        
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+            final DiscoveryHolder holder = (DiscoveryHolder)view.getTag();
+            
+            // Get the current separator label
+            MDiscovery current = mDm.fillInStandardFields(cursor);
+            MUserProperty currentProp = mPm.getProperty(current.connectionType);
+            if (currentProp == null) {
+                mTitle = current.connectionType;
+            } else {
+                mTitle = currentProp.value;
+            }
+            
+            // Check if the separator above is the same
+            boolean needSeparator = false;
+            final int position = cursor.getPosition();
+            if (position == 0) {
+                needSeparator = true;
+            } else {
+                cursor.moveToPosition(position - 1);
+                MDiscovery previous = mDm.fillInStandardFields(cursor);
+                MUserProperty prop = mPm.getProperty(previous.connectionType);
+                if (prop == null) {
+                    mPreviousTitle = previous.connectionType;
+                } else {
+                    mPreviousTitle = prop.value;
+                }
+                if (!mTitle.equals(mPreviousTitle)) {
+                    needSeparator = true;
+                }
+                cursor.moveToPosition(position);
+            }
+            
+            // Show the separator if needed
+            if (needSeparator) {
+                holder.separator.setText(mTitle);
+                holder.separator.setVisibility(View.VISIBLE);
+            } else {
+                holder.separator.setVisibility(View.GONE);
+            }
+            
+            // Set main title
+            MDiscoveredPerson person = mDpm.getPerson(current.personId);
+            holder.titleView.setText(person.name);
+            holder.titleView.setChecked(true);
+            
+            // Set subtitle
+            holder.subtitleView.setText(person.accountType);
+            
+            // Save this person
+            holder.personId = current.personId;
+        }
+        
+        @Override
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            View v = LayoutInflater.from(context).inflate(R.layout.list_item, parent, false);
+            DiscoveryHolder dh = new DiscoveryHolder();
+            dh.separator = (TextView) v.findViewById(R.id.separator);
+            dh.titleView = (CheckedTextView) v.findViewById(R.id.title);
+            dh.subtitleView = (TextView) v.findViewById(R.id.subtitle);
+            v.setTag(dh);
+            return v;
+        }
     }
 }
