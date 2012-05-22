@@ -20,6 +20,7 @@ public class CheckinManager extends ManagerBase {
     private static final int exitTime = 4;
     
     private static final long DAY = 1000L * 60L * 60L * 24L;
+    private static final long SHORT_INTERVAL = 1000L * 60L * 60L * 3L;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
@@ -108,7 +109,7 @@ public class CheckinManager extends ManagerBase {
     }
     
     public MCheckinData getRecentCheckin(Long locationId) {
-        Long cutoff = System.currentTimeMillis() - DAY;
+        Long cutoff = System.currentTimeMillis() - SHORT_INTERVAL;
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +

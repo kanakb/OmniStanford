@@ -42,9 +42,11 @@ public class LocationService extends Service {
 	public static final String TAG = "LocationService";
 	
 	private static final long INTERVAL = 1000 * 60 * 15;
-	private static final long SHORT_INTERVAL = 1000 * 60 * 4;
+	private static final long SHORT_INTERVAL = 1000 * 60 * 6;
 	
 	private Integer mUpdateCount = 0;
+	private Integer mCheckoutCount = 0;
+	private static final int MAX_OUTSIDE_COUNT = 9;
 	private static final int MAX_UPDATE_COUNT = 4;
 	
 	private LocationManager mLocationManager;
@@ -242,7 +244,7 @@ public class LocationService extends Service {
 			        Log.d(TAG, "Found " + match.name);
 			        MCheckinData data = cm.getRecentCheckin(match.id);
 			        // Only update if no recent checkins, or already checked out
-			        if (data == null || (data.exitTime != null && data.exitTime != 0L)) {
+			        if (data == null) {
 			            data = new MCheckinData();
 			            data.entryTime = System.currentTimeMillis();
 			            data.locationId = match.id;
@@ -274,7 +276,7 @@ public class LocationService extends Service {
 			                    }
 			                }
 			            }
-			        } else if (data != null) {
+			        } else {
 			            // Only check in remotely
                         PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
                         Request request = new Request(match.principal, "checkin", mResponseHandler);
@@ -296,19 +298,27 @@ public class LocationService extends Service {
                         }
 			        }
 			    } else {
-			        // Exit open checkins
-			        List<MCheckinData> checkins = cm.getRecentCheckins();
-			        for (MCheckinData data : checkins) {
-			            if (data.exitTime == null || data.exitTime == 0) {
-			                data.exitTime = System.currentTimeMillis();
-			                cm.updateCheckin(data);
-			                MLocation loc = mLm.getLocation(data.locationId);
-			                Request request = new Request(loc.principal, "checkout", null);
-			                request.send(LocationService.this);
+			        // Exit open checkins (if we get enough updates outside a valid location)
+			        Log.d(TAG, "exiting open");
+			        synchronized(mCheckoutCount) {
+			            mCheckoutCount++;
+			            if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
+			                mCheckoutCount = 0;
+        			        List<MCheckinData> checkins = cm.getRecentCheckins();
+        			        for (MCheckinData data : checkins) {
+        			            if (data.exitTime == null || data.exitTime == 0) {
+        			                data.exitTime = System.currentTimeMillis();
+        			                cm.updateCheckin(data);
+        			                MLocation loc = mLm.getLocation(data.locationId);
+        			                Request request = new Request(loc.principal, "checkout", null);
+        			                request.send(LocationService.this);
+        			            }
+        			        }
 			            }
 			        }
 			    }
 			}
+			// Turn off location updates periodically
 			synchronized(mUpdateCount) {
     			mUpdateCount++;
     			if (mUpdateCount > MAX_UPDATE_COUNT) {

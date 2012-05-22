@@ -30,7 +30,7 @@ public class MessageReceiver extends BroadcastReceiver {
 
         Musubi musubi = Musubi.forIntent(context, intent);
         DbObj obj = musubi.objForUri(objUri);
-        if (obj.getSender().isOwned()) {
+        if (obj == null || obj.getSender() == null || obj.getSender().isOwned()) {
             return;
         }
         
@@ -42,7 +42,7 @@ public class MessageReceiver extends BroadcastReceiver {
              context.startService(service);
         }
 
-        // Dont notify in Musubi
+        // Don't notify in Musubi
         Bundle b = new Bundle();
         b.putInt("notification", 0);
         setResult(Activity.RESULT_OK, null, b);

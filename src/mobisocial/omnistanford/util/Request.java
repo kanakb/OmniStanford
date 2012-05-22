@@ -80,6 +80,12 @@ public class Request {
 		return null;
 	}
 	
+	public void cancelUpdates() {
+	    if (mResHandler != null) {
+	        mFeed.unregisterStateObserver(mObserver);
+	    }
+	}
+	
 	Observer mObserver = new Observer();
 	class Observer implements FeedObserver {
 		@Override

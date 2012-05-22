@@ -306,6 +306,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                     App.getDatabaseSource(OmniStanfordActivity.this));
             return cm.getRecentCheckins(MONTH);
         }
+        
         @Override
         protected void onPostExecute(List<MCheckinData> data) {
             constructMap(data);
