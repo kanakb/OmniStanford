@@ -3,17 +3,20 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:focusable="false"
     android:paddingBottom="8dp">
  
     <TextView
         style="?android:attr/listSeparatorTextViewStyle"
         android:id="@+id/separator"
+        android:focusable="false"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textColor="@android:color/white" />
  
     <CheckedTextView
         android:id="@+id/title"
+        android:focusable="false"
         android:checkMark="?android:attr/listChoiceIndicatorMultiple"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -27,6 +30,7 @@
  
     <TextView
         android:id="@+id/subtitle"
+        android:focusable="false"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"

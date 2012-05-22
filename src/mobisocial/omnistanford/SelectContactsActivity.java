@@ -88,6 +88,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
                 for (long selId : mListView.getCheckedItemIds()) {
                     Log.d(TAG, "selected " + selId);
                 }
+                mCursorAdapter.notifyDataSetChanged();
                 //parent.getChildAt(position).setBackgroundColor(Color.BLUE);
                 //selected.setTextColor(getResources().getColor(android.R.color.darker_gray));
             }
@@ -237,6 +238,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
             final DiscoveryHolder holder = (DiscoveryHolder)view.getTag();
+            holder.titleView.setChecked(false);
             
             // Get the current separator label
             MDiscovery current = mDm.fillInStandardFields(cursor);
@@ -278,7 +280,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             // Set main title
             MDiscoveredPerson person = mDpm.getPerson(current.personId);
             holder.titleView.setText(person.name);
-            holder.titleView.setChecked(true);
+            holder.titleView.setChecked(mListView.getCheckedItemPositions().get(position + 1));
             
             // Set subtitle
             holder.subtitleView.setText(person.accountType);
