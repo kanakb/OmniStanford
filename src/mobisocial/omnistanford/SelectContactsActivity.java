@@ -1,9 +1,16 @@
 package mobisocial.omnistanford;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.TreeSet;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.DiscoveredPersonManager;
@@ -19,8 +26,10 @@ import mobisocial.omnistanford.ui.PullToRefreshListView;
 import mobisocial.omnistanford.ui.PullToRefreshListView.OnRefreshListener;
 import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.ResponseHandler;
+import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -35,6 +44,7 @@ import android.widget.CursorAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class SelectContactsActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "SelectContactsActivity";
@@ -46,10 +56,83 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     private boolean mLocal;
     private DiscoveryManager mDm;
     private HashMap<Long, Long> mPersonMap;
+    private TreeSet<Long> mSelectedPeople;
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getSherlock().getMenuInflater();
+        inflater.inflate(R.menu.contact_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_start_feed:
+                Log.d(TAG, "starting feed...");
+                initiateNewFeed();
+                return true;
+            case android.R.id.home:
+                Intent intent = new Intent(this, OmniStanfordActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                return true;
+            default:
+                Log.d(TAG, "other menu item selected");
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    
+    public void initiateNewFeed() {
+        Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
+        HashSet<Long> addedSet = new HashSet<Long>();
+        JSONObject primary = new JSONObject();
+        JSONArray arr = new JSONArray();
+        try {
+            primary.put("visible", true);
+            DiscoveredPersonManager dpm = new DiscoveredPersonManager(App.getDatabaseSource(this));
+            Log.d(TAG, "selected size: " + mSelectedPeople.size());
+            Log.d(TAG, "person map size: " + mPersonMap.size());
+            for (Long selId : mListView.getCheckedItemIds()) {
+                Long personId = mPersonMap.get(selId);
+                MDiscoveredPerson person = dpm.getPerson(personId);
+                if (person == null || addedSet.contains(personId)) {
+                    continue;
+                }
+                addedSet.add(personId);
+                JSONObject one = new JSONObject();
+                one.put("hashed", person.identifier);
+                one.put("name", person.name);
+                Log.d(TAG, "Adding " + person.name);
+                one.put("type", person.accountType);
+                arr.put(one);
+            }
+            primary.put("members", arr);
+            primary.put("sender", Util.getPickedAccountType(this));
+        } catch (JSONException e) {
+            Log.e(TAG, "JSON error", e);
+            return;
+        }
+        create.putExtra(EXTRA_NAME, primary.toString());
+        startActivityForResult(create, REQUEST_CREATE_FEED);
+    }
+    
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CREATE_FEED) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Successfully created feed!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Could not create feed.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         
         // Don't bother if there's no data
         if (getIntent() == null || !getIntent().hasExtra("checkin")) {
@@ -59,6 +142,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         
         mDm = new DiscoveryManager(App.getDatabaseSource(this));
         mPersonMap = new HashMap<Long, Long>();
+        mSelectedPeople = new TreeSet<Long>();
         
         // Get valid checkin data
         mCm = new CheckinManager(App.getDatabaseSource(this));
@@ -236,6 +320,18 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         }
         
         @Override
+        public void changeCursor(Cursor c) {
+            Log.d(TAG, "Changing cursor");
+            super.changeCursor(c);
+            if (mSelectedPeople != null) {
+                mSelectedPeople.clear();
+            }
+            if (mListView != null && mListView.getCheckedItemPositions() != null) {
+                mListView.getCheckedItemPositions().clear();
+            }
+        }
+        
+        @Override
         public void bindView(View view, Context context, Cursor cursor) {
             final DiscoveryHolder holder = (DiscoveryHolder)view.getTag();
             holder.titleView.setChecked(false);
@@ -280,7 +376,17 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             // Set main title
             MDiscoveredPerson person = mDpm.getPerson(current.personId);
             holder.titleView.setText(person.name);
-            holder.titleView.setChecked(mListView.getCheckedItemPositions().get(position + 1));
+            if (mListView != null && mListView.getCheckedItemPositions() != null) {
+                holder.titleView.setChecked(mListView.getCheckedItemPositions().get(position + 1));
+            }
+            
+            // Selected people are the ones with whom to start a new feed
+            if (holder.titleView.isChecked()) {
+                Log.d(TAG, "Adding person id " + current.personId);
+                mSelectedPeople.add(current.personId);
+            } else {
+                mSelectedPeople.remove(current.personId);
+            }
             
             // Set subtitle
             holder.subtitleView.setText(person.accountType);

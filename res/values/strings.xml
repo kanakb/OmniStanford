@@ -113,5 +113,6 @@
 		<item>Toyon Hall</item>
 		<item>Wilbur Hall</item>
     </string-array>
+    <string name="start_feed">Start Something</string>
 
 </resources>
