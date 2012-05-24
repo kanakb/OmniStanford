@@ -379,11 +379,11 @@ public class LocationService extends Service {
                                 discovery.personId = person.id;
                                 if (myDorm != null && myDorm.value.equals(match.optString("dorm"))) {
                                     discovery.connectionType = SettingsActivity.RESIDENCE;
-                                    dm.insertDiscovery(discovery);
+                                    dm.ensureDiscovery(discovery);
                                 }
                                 if (myDept != null && myDorm.value.equals(match.optString("department"))) {
                                     discovery.connectionType = SettingsActivity.DEPARTMENT;
-                                    dm.insertDiscovery(discovery);
+                                    dm.ensureDiscovery(discovery);
                                 }
                             }
                         }

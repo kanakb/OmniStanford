@@ -24,6 +24,7 @@ public class DiscoveryManager extends ManagerBase {
     };
     
     private SQLiteStatement mInsertDiscovery;
+    private SQLiteStatement mUpdateDiscovery;
     
     public DiscoveryManager(SQLiteOpenHelper databaseSource) {
         super(databaseSource);
@@ -55,6 +56,41 @@ public class DiscoveryManager extends ManagerBase {
         }
     }
     
+    public void updateDiscovery(MDiscovery discovery) {
+        SQLiteDatabase db = initializeDatabase();
+        if (mUpdateDiscovery == null) {
+            synchronized(this) {
+                StringBuilder sql = new StringBuilder("UPDATE ")
+                    .append(MDiscovery.TABLE)
+                    .append(" SET ")
+                    .append(MDiscovery.COL_CHECKIN_ID).append("=?,")
+                    .append(MDiscovery.COL_PERSON_ID).append("=?,")
+                    .append(MDiscovery.COL_CONNECTION_TYPE).append("=?")
+                    .append(" WHERE ").append(MDiscovery.COL_ID).append("=?");
+                mUpdateDiscovery = db.compileStatement(sql.toString());
+            }
+        }
+        
+        synchronized(mUpdateDiscovery) {
+            bindField(mUpdateDiscovery, checkinId, discovery.checkinId);
+            bindField(mUpdateDiscovery, personId, discovery.personId);
+            bindField(mUpdateDiscovery, connectionType, discovery.connectionType);
+            bindField(mUpdateDiscovery, 4, discovery.id);
+            mUpdateDiscovery.execute();
+        }
+    }
+    
+    public void ensureDiscovery(MDiscovery discovery) {
+        MDiscovery existing = getDiscovery(
+                discovery.checkinId, discovery.personId, discovery.connectionType);
+        if (existing != null) {
+            discovery.id = existing.id;
+            updateDiscovery(discovery);
+        } else {
+            insertDiscovery(discovery);
+        }
+    }
+    
     public List<MDiscovery> getDiscoveries(Long checkin) {
         Cursor c = getDiscoveriesCursor(checkin);
         try {
@@ -63,6 +99,26 @@ public class DiscoveryManager extends ManagerBase {
                 result.add(fillInStandardFields(c));
             }
             return result;
+        } finally {
+            c.close();
+        }
+    }
+    
+    public MDiscovery getDiscovery(Long checkinId, Long personId, String connectionType) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MDiscovery.TABLE;
+        String selection = MDiscovery.COL_CHECKIN_ID + "=? AND " +
+                MDiscovery.COL_PERSON_ID + "=? AND " +
+                MDiscovery.COL_CONNECTION_TYPE + "=?";
+        String[] selectionArgs = new String[]
+                { checkinId.toString(), personId.toString(), connectionType };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
         } finally {
             c.close();
         }
