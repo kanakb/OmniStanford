@@ -58,6 +58,7 @@ public class Request {
     		}
     		
     		body.put("route", mRoute);
+    		body.put("to", mLocPrincipal);
     		req.put("req", body);
 		} catch (JSONException e) {
 			Log.e(TAG, "JSON parse error", e);

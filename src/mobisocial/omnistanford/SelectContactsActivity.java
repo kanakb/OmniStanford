@@ -2,7 +2,6 @@ package mobisocial.omnistanford;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.TreeSet;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -48,6 +47,17 @@ import android.widget.Toast;
 
 public class SelectContactsActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "SelectContactsActivity";
+    
+    private static final String ACCOUNT_TYPE_STANFORD = "edu.stanford";
+    private static final String ACCOUNT_TYPE_GOOGLE = "com.google";
+    private static final String ACCOUNT_TYPE_FACEBOOK = "com.facebook.auth.login";
+    private static final String ACCOUNT_TYPE_PHONE = "mobisocial.musubi.phone";
+    
+    private static final String FAMILIAR_STANFORD = "Stanford Account";
+    private static final String FAMILIAR_GOOGLE = "Google Account";
+    private static final String FAMILIAR_FACEBOOK = "Facebook Account";
+    private static final String FAMILIAR_PHONE = "Phone Account";
+    
     private PullToRefreshListView mListView;
     private CursorAdapter mCursorAdapter;
     private CheckinManager mCm;
@@ -56,7 +66,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     private boolean mLocal;
     private DiscoveryManager mDm;
     private HashMap<Long, Long> mPersonMap;
-    private TreeSet<Long> mSelectedPeople;
+    private HashMap<String, String> mProviderMap;
     
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -91,7 +101,6 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         try {
             primary.put("visible", true);
             DiscoveredPersonManager dpm = new DiscoveredPersonManager(App.getDatabaseSource(this));
-            Log.d(TAG, "selected size: " + mSelectedPeople.size());
             Log.d(TAG, "person map size: " + mPersonMap.size());
             for (Long selId : mListView.getCheckedItemIds()) {
                 Long personId = mPersonMap.get(selId);
@@ -134,6 +143,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         super.onCreate(savedInstanceState);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         
+        mProviderMap = new HashMap<String, String>();
+        mProviderMap.put(ACCOUNT_TYPE_STANFORD, FAMILIAR_STANFORD);
+        mProviderMap.put(ACCOUNT_TYPE_GOOGLE, FAMILIAR_GOOGLE);
+        mProviderMap.put(ACCOUNT_TYPE_FACEBOOK, FAMILIAR_FACEBOOK);
+        mProviderMap.put(ACCOUNT_TYPE_PHONE, FAMILIAR_PHONE);
+        
         // Don't bother if there's no data
         if (getIntent() == null || !getIntent().hasExtra("checkin")) {
             finish();
@@ -142,7 +157,6 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         
         mDm = new DiscoveryManager(App.getDatabaseSource(this));
         mPersonMap = new HashMap<Long, Long>();
-        mSelectedPeople = new TreeSet<Long>();
         
         // Get valid checkin data
         mCm = new CheckinManager(App.getDatabaseSource(this));
@@ -270,12 +284,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
                             discovery.personId = person.id;
                             if (myDorm != null && myDorm.value.equals(match.optString("dorm"))) {
                                 discovery.connectionType = SettingsActivity.RESIDENCE;
-                            } else if (myDept != null && myDorm.value.equals(match.optString("department"))) {
-                                discovery.connectionType = SettingsActivity.DEPARTMENT;
-                            } else {
-                                continue;
+                                dm.insertDiscovery(discovery);
                             }
-                            dm.insertDiscovery(discovery);
+                            if (myDept != null && myDorm.value.equals(match.optString("department"))) {
+                                discovery.connectionType = SettingsActivity.DEPARTMENT;
+                                dm.insertDiscovery(discovery);
+                            }
                         }
                     }
                 }
@@ -323,9 +337,6 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         public void changeCursor(Cursor c) {
             Log.d(TAG, "Changing cursor");
             super.changeCursor(c);
-            if (mSelectedPeople != null) {
-                mSelectedPeople.clear();
-            }
             if (mListView != null && mListView.getCheckedItemPositions() != null) {
                 mListView.getCheckedItemPositions().clear();
             }
@@ -380,16 +391,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
                 holder.titleView.setChecked(mListView.getCheckedItemPositions().get(position + 1));
             }
             
-            // Selected people are the ones with whom to start a new feed
-            if (holder.titleView.isChecked()) {
-                Log.d(TAG, "Adding person id " + current.personId);
-                mSelectedPeople.add(current.personId);
-            } else {
-                mSelectedPeople.remove(current.personId);
-            }
-            
             // Set subtitle
-            holder.subtitleView.setText(person.accountType);
+            if (mProviderMap != null && mProviderMap.containsKey(person.accountType)) {
+                holder.subtitleView.setText(mProviderMap.get(person.accountType));
+            } else {
+                holder.subtitleView.setText(person.accountType);
+            }
             
             // Save this person
             holder.personId = current.personId;

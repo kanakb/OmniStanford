@@ -50,10 +50,13 @@ public class Util {
 		AccountManager am = new AccountManager(App.getDatabaseSource(context));
 		
 		// If we have a default set, return that one
-		MAccount defaultMatch = am.getAccount(
-		        getPickedAccountType(context), getPickedAccountPrincipalHash(context));
-		if (defaultMatch != null) {
-		    return defaultMatch;
+		if (getPickedAccountType(context) != null
+		        && getPickedAccountPrincipalHash(context) != null) {
+    		MAccount defaultMatch = am.getAccount(
+    		        getPickedAccountType(context), getPickedAccountPrincipalHash(context));
+    		if (defaultMatch != null) {
+    		    return defaultMatch;
+    		}
 		}
 		
 		// Otherwise, return the first
