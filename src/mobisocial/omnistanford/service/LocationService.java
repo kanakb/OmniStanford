@@ -43,9 +43,11 @@ public class LocationService extends Service {
 	
 	private static final long INTERVAL = 1000 * 60 * 15;
 	private static final long SHORT_INTERVAL = 1000 * 60 * 6;
+	private static final long MINUTE = 1000 * 60;
 	
 	private Integer mUpdateCount = 0;
 	private Integer mCheckoutCount = 0;
+	private long mLastRequest = 0;
 	private static final int MAX_OUTSIDE_COUNT = 9;
 	private static final int MAX_UPDATE_COUNT = 4;
 	
@@ -272,7 +274,11 @@ public class LocationService extends Service {
 			                if (enabled != null) {
 			                    boolean shouldSend = "true".equals(enabled.value) ? true : false;
 			                    if (shouldSend) {
-		                            request.send(LocationService.this);
+			                        long now = System.currentTimeMillis();
+			                        if (now - MINUTE > mLastRequest) {
+			                            mLastRequest = now;
+			                            request.send(LocationService.this);
+			                        }
 			                    }
 			                }
 			            }
@@ -293,7 +299,11 @@ public class LocationService extends Service {
                         if (enabled != null) {
                             boolean shouldSend = "true".equals(enabled.value) ? true : false;
                             if (shouldSend) {
-                                request.send(LocationService.this);
+                                long now = System.currentTimeMillis();
+                                if (now - MINUTE > mLastRequest) {
+                                    mLastRequest = now;
+                                    request.send(LocationService.this);
+                                }
                             }
                         }
 			        }
@@ -381,7 +391,7 @@ public class LocationService extends Service {
                                     discovery.connectionType = SettingsActivity.RESIDENCE;
                                     dm.ensureDiscovery(discovery);
                                 }
-                                if (myDept != null && myDorm.value.equals(match.optString("department"))) {
+                                if (myDept != null && myDept.value.equals(match.optString("department"))) {
                                     discovery.connectionType = SettingsActivity.DEPARTMENT;
                                     dm.ensureDiscovery(discovery);
                                 }

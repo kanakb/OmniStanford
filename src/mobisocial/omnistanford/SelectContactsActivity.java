@@ -165,6 +165,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             finish();
             return;
         }
+        Log.d(TAG, "checkinId: " + mCheckin.id);
         mLocal = (mCheckin.exitTime == null || mCheckin.exitTime == 0L) ? false : true;
         
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
@@ -259,6 +260,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         public void OnResponse(DbObj obj) {
             Log.d(TAG, "got a response");
             JSONObject json = obj.getJson();
+            Log.d(TAG, json.toString());
             if (!json.optString("id").equals("")) {
                 long checkinId = Long.parseLong(json.optString("id"));
                 JSONArray arr = json.optJSONArray("res");
@@ -284,10 +286,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
                             discovery.personId = person.id;
                             if (myDorm != null && myDorm.value.equals(match.optString("dorm"))) {
                                 discovery.connectionType = SettingsActivity.RESIDENCE;
+                                Log.d(TAG, "dorm match for " + checkinId);
                                 dm.ensureDiscovery(discovery);
                             }
-                            if (myDept != null && myDorm.value.equals(match.optString("department"))) {
+                            if (myDept != null && myDept.value.equals(match.optString("department"))) {
                                 discovery.connectionType = SettingsActivity.DEPARTMENT;
+                                Log.d(TAG, "department match for " + checkinId);
                                 dm.ensureDiscovery(discovery);
                             }
                         }

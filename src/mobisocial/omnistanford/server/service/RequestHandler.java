@@ -115,10 +115,18 @@ public class RequestHandler extends IntentService {
 	void onCheckout(long localUserId, JSONObject req, DbFeed feed) {
 		JSONObject from = req.optJSONObject("from");
 		if(from != null) {
+		    Log.d(TAG, "onCheckout");
+		    Log.d(TAG, "to: " + req.optString("to"));
 			MLocation location = mLocManager.getLocation(req.optString("to"));
+			if (location != null) {
+			    Log.d(TAG, "location OK");
+			}
+			Log.d(TAG, "details: {" + from.optString("name") + ", "
+			        + from.optString("type") + ", " + from.optString("hash") + "}");
 			MCheckinData checkin = mCheckinManager.findOpenCheckinForUser(location.id, 
 					from.optString("name"), from.optString("type"), from.optString("hash"));
 			if(checkin != null) {
+			    Log.d(TAG, "checkin exists");
 				checkin.exitTime = System.currentTimeMillis();
 				mCheckinManager.updateCheckin(checkin);
 				Log.i(TAG, "checkout inserted");
