@@ -159,8 +159,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                 MLocation loc = lm.getLocation(checkin.locationId);
                 hm.put("title", loc.name);
                 hm.put("subtitle", new Date(checkin.entryTime).toString());
-                mIdMap.put(new Long(mHms.size()), checkin.id);
                 mHms.add(hm);
+                mIdMap.put(new Long(mHms.size()), checkin.id);
             }
         }
     }
@@ -257,17 +257,17 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 		            App.getDatabaseSource(OmniStanfordActivity.this));
 		    LocationManager lm = new LocationManager(
 		            App.getDatabaseSource(OmniStanfordActivity.this));
-            List<MCheckinData> checkins = cm.getRecentCheckins();
+            List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
             for (MCheckinData data : checkins) {
                 if (data.exitTime == null || data.exitTime == 0) {
                     data.exitTime = System.currentTimeMillis();
                     cm.updateCheckin(data);
                     MLocation loc = lm.getLocation(data.locationId);
-                    Log.d(TAG, "Checking out from " + loc.name);
+                    Log.d(TAG, "Checking out from " + loc.name + " for: " + data.id);
                     Request request = new Request(loc.principal, "checkout", null);
                     request.send(v.getContext());
                 } else {
-                    Log.d(TAG, "exit time: " + data.exitTime);
+                    Log.d(TAG, "exit time: " + data.exitTime + " for: " + data.id);
                 }
             }
 		}

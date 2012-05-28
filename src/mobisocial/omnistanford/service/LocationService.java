@@ -44,6 +44,7 @@ public class LocationService extends Service {
 	private static final long INTERVAL = 1000 * 60 * 15;
 	private static final long SHORT_INTERVAL = 1000 * 60 * 6;
 	private static final long MINUTE = 1000 * 60;
+	private static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
 	
 	private Integer mUpdateCount = 0;
 	private Integer mCheckoutCount = 0;
@@ -109,9 +110,12 @@ public class LocationService extends Service {
 	    
 	    mFastHandler = new Handler();
 	    mSlowHandler = new Handler();
+
+        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
 	    
-	    mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-	    mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
+        mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
 	    AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
         long currentElapsedTime = SystemClock.elapsedRealtime();
         
@@ -123,8 +127,6 @@ public class LocationService extends Service {
 	    PendingIntent fetchSender = PendingIntent.getService(this, 0, locationFetchIntent, 0);
 	    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
 	            AlarmManager.INTERVAL_DAY, fetchSender);
-        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
-        new LocationUpdater(mLm).update();
 	}
 	
 	@Override
@@ -132,11 +134,16 @@ public class LocationService extends Service {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
 		// Need to update list of known locations periodically
 		if (intent != null) {
+		    if (intent.getExtras() != null) {
+		        Log.d(TAG, "Extras: " + intent.getExtras().toString());
+		    }
     		if (intent.hasExtra("locationFetch")) {
     		    new LocationUpdater(mLm).update();
     		} else if (intent.hasExtra("locationUpdate")) {
+    		    Log.d(TAG, "locationUpdate");
                 setInnerLocationState();
             } else if (intent.hasExtra("periodicLocationUpdate")) {
+                Log.d(TAG, "periodicLocationUpdate");
                 setOuterLocationState();
             }
 		}
@@ -314,7 +321,7 @@ public class LocationService extends Service {
 			            mCheckoutCount++;
 			            if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
 			                mCheckoutCount = 0;
-        			        List<MCheckinData> checkins = cm.getRecentCheckins();
+        			        List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
         			        for (MCheckinData data : checkins) {
         			            if (data.exitTime == null || data.exitTime == 0) {
         			                data.exitTime = System.currentTimeMillis();

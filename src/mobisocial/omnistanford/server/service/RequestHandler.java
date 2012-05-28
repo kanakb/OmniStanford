@@ -121,10 +121,10 @@ public class RequestHandler extends IntentService {
 			if (location != null) {
 			    Log.d(TAG, "location OK");
 			}
-			Log.d(TAG, "details: {" + from.optString("name") + ", "
+			Log.d(TAG, "details: {" + location.id + ", " + from.optString("name") + ", "
 			        + from.optString("type") + ", " + from.optString("hash") + "}");
 			MCheckinData checkin = mCheckinManager.findOpenCheckinForUser(location.id, 
-					from.optString("name"), from.optString("type"), from.optString("hash"));
+			        from.optString("type"), from.optString("hash"));
 			if(checkin != null) {
 			    Log.d(TAG, "checkin exists");
 				checkin.exitTime = System.currentTimeMillis();

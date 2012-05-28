@@ -116,7 +116,7 @@ public class CheckinManager extends ManagerBase {
     
     public void checkin(MCheckinData newCheckin) {
 		MCheckinData oldCheckin = findOpenCheckinForUser(newCheckin.locationId,
-				newCheckin.userName, newCheckin.userType, newCheckin.userHash);
+		        newCheckin.userType, newCheckin.userHash);
 		if(oldCheckin != null) {
 			newCheckin.id = oldCheckin.id;
 			updateCheckin(newCheckin);
@@ -126,18 +126,16 @@ public class CheckinManager extends ManagerBase {
     }
     
     public MCheckinData findOpenCheckinForUser(Long locationId, 
-    		String usrName, String usrType, String usrHash) {
+    		String usrType, String usrHash) {
     	SQLiteDatabase db = initializeDatabase();
     	String table = MCheckinData.TABLE;
     	StringBuilder selection = new StringBuilder()
     		.append(MCheckinData.COL_LOCATION_ID).append( "=? AND ")
-    		.append(MCheckinData.COL_USER_NAME).append("=? AND ")
     		.append(MCheckinData.COL_USER_TYPE).append("=? AND ")
     		.append(MCheckinData.COL_USER_HASH).append("=? AND ")
     		.append(MCheckinData.COL_EXIT_TIME).append(" IS NULL");
     	String[] selectionArgs = {
-    			Long.toString(location_id),
-    			usrName,
+    			Long.toString(locationId),
     			usrType,
     			usrHash };
     	Cursor c = db.query(table, STANDARD_FIELDS, selection.toString(), selectionArgs, null, null, null);
