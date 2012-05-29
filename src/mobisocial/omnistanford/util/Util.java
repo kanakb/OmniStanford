@@ -48,6 +48,18 @@ public class Util {
 	
 	public static MAccount loadAccount(Context context) {
 		AccountManager am = new AccountManager(App.getDatabaseSource(context));
+		
+		// If we have a default set, return that one
+		if (getPickedAccountType(context) != null
+		        && getPickedAccountPrincipalHash(context) != null) {
+    		MAccount defaultMatch = am.getAccount(
+    		        getPickedAccountType(context), getPickedAccountPrincipalHash(context));
+    		if (defaultMatch != null) {
+    		    return defaultMatch;
+    		}
+		}
+		
+		// Otherwise, return the first
 		List<MAccount> acs = am.getAccounts(null);
 		if(acs.size() != 0) {
 			return acs.get(0);

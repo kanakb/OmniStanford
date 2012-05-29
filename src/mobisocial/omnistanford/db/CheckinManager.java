@@ -20,7 +20,7 @@ public class CheckinManager extends ManagerBase {
     private static final int exitTime = 4;
     
     private static final long DAY = 1000L * 60L * 60L * 24L;
-    private static final long HOUR = 1000L * 60L * 60L;
+    private static final long SHORT_INTERVAL = 1000L * 60L * 60L * 3L;
     
     private static final String[] STANDARD_FIELDS = new String[] {
     	MCheckinData.COL_ID,
@@ -91,8 +91,25 @@ public class CheckinManager extends ManagerBase {
         }
     }
     
+    public MCheckinData getCheckin(Long id) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MCheckinData.TABLE;
+        String selection = MCheckinData.COL_ID + "=?";
+        String[] selectionArgs = new String[] { id.toString() };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return fillInStandardFields(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+    
     public MCheckinData getRecentCheckin(Long locationId) {
-        Long cutoff = System.currentTimeMillis() - HOUR;
+        Long cutoff = System.currentTimeMillis() - SHORT_INTERVAL;
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_LOCATION_ID + "=? AND " +
@@ -122,6 +139,29 @@ public class CheckinManager extends ManagerBase {
         SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_ENTRY_TIME + ">?";
+        String[] selectionArgs = new String[] { cutoff.toString() };
+        String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
+        try {
+            List<MCheckinData> checkins = new ArrayList<MCheckinData>();
+            while (c.moveToNext()) {
+                checkins.add(fillInStandardFields(c));
+            }
+            return checkins;
+        } finally {
+            c.close();
+        }
+    }
+    
+    public List<MCheckinData> getRecentOpenCheckins(long duration) {
+        Long cutoff = System.currentTimeMillis() - duration;
+        Log.d(TAG, "time: " + System.currentTimeMillis());
+        Log.d(TAG, "duration: " + duration);
+        Log.d(TAG, "cutoff: " + cutoff);
+        SQLiteDatabase db = initializeDatabase();
+        String table = MCheckinData.TABLE;
+        String selection = MCheckinData.COL_ENTRY_TIME + ">? AND "
+                + MCheckinData.COL_EXIT_TIME + " IS NULL";
         String[] selectionArgs = new String[] { cutoff.toString() };
         String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);

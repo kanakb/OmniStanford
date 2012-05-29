@@ -42,9 +42,14 @@ public class LocationService extends Service {
 	public static final String TAG = "LocationService";
 	
 	private static final long INTERVAL = 1000 * 60 * 15;
-	private static final long SHORT_INTERVAL = 1000 * 60 * 4;
+	private static final long SHORT_INTERVAL = 1000 * 60 * 6;
+	private static final long MINUTE = 1000 * 60;
+	private static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
 	
 	private Integer mUpdateCount = 0;
+	private Integer mCheckoutCount = 0;
+	private long mLastRequest = 0;
+	private static final int MAX_OUTSIDE_COUNT = 9;
 	private static final int MAX_UPDATE_COUNT = 4;
 	
 	private LocationManager mLocationManager;
@@ -105,9 +110,12 @@ public class LocationService extends Service {
 	    
 	    mFastHandler = new Handler();
 	    mSlowHandler = new Handler();
+
+        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
 	    
-	    mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-	    mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
+        mLm = new mobisocial.omnistanford.db.LocationManager(new DatabaseHelper(this));
 	    AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
         long currentElapsedTime = SystemClock.elapsedRealtime();
         
@@ -119,8 +127,6 @@ public class LocationService extends Service {
 	    PendingIntent fetchSender = PendingIntent.getService(this, 0, locationFetchIntent, 0);
 	    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, currentElapsedTime,
 	            AlarmManager.INTERVAL_DAY, fetchSender);
-        mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
-        new LocationUpdater(mLm).update();
 	}
 	
 	@Override
@@ -128,11 +134,16 @@ public class LocationService extends Service {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
 		// Need to update list of known locations periodically
 		if (intent != null) {
+		    if (intent.getExtras() != null) {
+		        Log.d(TAG, "Extras: " + intent.getExtras().toString());
+		    }
     		if (intent.hasExtra("locationFetch")) {
     		    new LocationUpdater(mLm).update();
     		} else if (intent.hasExtra("locationUpdate")) {
+    		    Log.d(TAG, "locationUpdate");
                 setInnerLocationState();
             } else if (intent.hasExtra("periodicLocationUpdate")) {
+                Log.d(TAG, "periodicLocationUpdate");
                 setOuterLocationState();
             }
 		}
@@ -241,6 +252,7 @@ public class LocationService extends Service {
 			    } else if (match != null && match.feedUri != null) {
 			        Log.d(TAG, "Found " + match.name);
 			        MCheckinData data = cm.getRecentCheckin(match.id);
+			        // Only update if no recent checkins, or already checked out
 			        if (data == null) {
 			            data = new MCheckinData();
 			            data.entryTime = System.currentTimeMillis();
@@ -269,25 +281,61 @@ public class LocationService extends Service {
 			                if (enabled != null) {
 			                    boolean shouldSend = "true".equals(enabled.value) ? true : false;
 			                    if (shouldSend) {
-		                            request.send(LocationService.this);
+			                        long now = System.currentTimeMillis();
+			                        if (now - MINUTE > mLastRequest) {
+			                            mLastRequest = now;
+			                            request.send(LocationService.this);
+			                        }
 			                    }
 			                }
 			            }
+			        } else {
+			            // Only check in remotely
+                        PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
+                        Request request = new Request(match.principal, "checkin", mResponseHandler);
+                        request.addParam("id", new Long(data.id).toString());
+                        MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
+                        if (dorm != null) {
+                            request.addParam(SettingsActivity.RESIDENCE, dorm.value);
+                        }
+                        MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
+                        if (department != null) {
+                            request.addParam(SettingsActivity.DEPARTMENT, department.value);
+                        }
+                        MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
+                        if (enabled != null) {
+                            boolean shouldSend = "true".equals(enabled.value) ? true : false;
+                            if (shouldSend) {
+                                long now = System.currentTimeMillis();
+                                if (now - MINUTE > mLastRequest) {
+                                    mLastRequest = now;
+                                    request.send(LocationService.this);
+                                }
+                            }
+                        }
 			        }
 			    } else {
-			        // Exit open checkins
-			        List<MCheckinData> checkins = cm.getRecentCheckins();
-			        for (MCheckinData data : checkins) {
-			            if (data.exitTime == null || data.exitTime == 0) {
-			                data.exitTime = System.currentTimeMillis();
-			                cm.updateCheckin(data);
-			                MLocation loc = mLm.getLocation(data.locationId);
-			                Request request = new Request(loc.principal, "checkout", null);
-			                request.send(LocationService.this);
+			        // Exit open checkins (if we get enough updates outside a valid location)
+			        Log.d(TAG, "exiting open");
+			        synchronized(mCheckoutCount) {
+			            mCheckoutCount++;
+			            if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
+			                mCheckoutCount = 0;
+        			        List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
+        			        for (MCheckinData data : checkins) {
+        			            if (data.exitTime == null || data.exitTime == 0) {
+        			                data.exitTime = System.currentTimeMillis();
+        			                cm.updateCheckin(data);
+        			                MLocation loc = mLm.getLocation(data.locationId);
+        			                Request request = new Request(loc.principal, "checkout", null);
+        			                request.send(LocationService.this);
+        			            }
+        			        }
 			            }
 			        }
 			    }
 			}
+			// Turn off location updates periodically
 			synchronized(mUpdateCount) {
     			mUpdateCount++;
     			if (mUpdateCount > MAX_UPDATE_COUNT) {
@@ -348,12 +396,12 @@ public class LocationService extends Service {
                                 discovery.personId = person.id;
                                 if (myDorm != null && myDorm.value.equals(match.optString("dorm"))) {
                                     discovery.connectionType = SettingsActivity.RESIDENCE;
-                                } else if (myDept != null && myDorm.value.equals(match.optString("department"))) {
-                                    discovery.connectionType = SettingsActivity.DEPARTMENT;
-                                } else {
-                                    continue;
+                                    dm.ensureDiscovery(discovery);
                                 }
-                                dm.insertDiscovery(discovery);
+                                if (myDept != null && myDept.value.equals(match.optString("department"))) {
+                                    discovery.connectionType = SettingsActivity.DEPARTMENT;
+                                    dm.ensureDiscovery(discovery);
+                                }
                             }
                         }
                     }

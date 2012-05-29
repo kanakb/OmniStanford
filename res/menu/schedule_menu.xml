@@ -3,6 +3,6 @@
      <item android:id="@+id/menu_save_schedule"
           android:icon="@drawable/visualization"
           android:title="@string/visualizaion"
-          android:showAsAction="ifRoom|withText" />
+          android:showAsAction="always|withText" />
 
 </menu>

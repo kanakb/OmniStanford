@@ -58,6 +58,7 @@ public class Request {
     		}
     		
     		body.put("route", mRoute);
+    		body.put("to", mLocPrincipal);
     		req.put("req", body);
 		} catch (JSONException e) {
 			Log.e(TAG, "JSON parse error", e);
@@ -78,6 +79,12 @@ public class Request {
 		}
 		
 		return null;
+	}
+	
+	public void cancelUpdates() {
+	    if (mResHandler != null) {
+	        mFeed.unregisterStateObserver(mObserver);
+	    }
 	}
 	
 	Observer mObserver = new Observer();

@@ -146,20 +146,22 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     }
     
     private void constructMap(List<MCheckinData> checkins) {
-        mHms.clear();
-        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-        if (checkins == null) {
-            CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-            checkins = cm.getRecentCheckins(MONTH);
-        }
-        mIdMap = new HashMap<Long, Long>();
-        for (MCheckinData checkin : checkins) {
-            HashMap<String, String> hm = new HashMap<String, String>();
-            MLocation loc = lm.getLocation(checkin.locationId);
-            hm.put("title", loc.name);
-            hm.put("subtitle", new Date(checkin.entryTime).toString());
-            mIdMap.put(new Long(mHms.size()), checkin.id);
-            mHms.add(hm);
+        synchronized(this) {
+            mHms.clear();
+            LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+            if (checkins == null) {
+                CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
+                checkins = cm.getRecentCheckins(MONTH);
+            }
+            mIdMap = new HashMap<Long, Long>();
+            for (MCheckinData checkin : checkins) {
+                HashMap<String, String> hm = new HashMap<String, String>();
+                MLocation loc = lm.getLocation(checkin.locationId);
+                hm.put("title", loc.name);
+                hm.put("subtitle", new Date(checkin.entryTime).toString());
+                mHms.add(hm);
+                mIdMap.put(new Long(mHms.size()), checkin.id);
+            }
         }
     }
     
@@ -167,8 +169,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private void showRecent(LinearLayout wrapper) {
         String[] from = new String[] { "title", "subtitle" };
         int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle };
-        if (mHms == null) {
-            mHms = new ArrayList<HashMap<String, String>>();
+        synchronized(this) {
+            if (mHms == null) {
+                mHms = new ArrayList<HashMap<String, String>>();
+            }
         }
         constructMap(null);
         /*HashMap<String, String> hm = new HashMap<String, String>();
@@ -257,17 +261,17 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
 		            App.getDatabaseSource(OmniStanfordActivity.this));
 		    LocationManager lm = new LocationManager(
 		            App.getDatabaseSource(OmniStanfordActivity.this));
-            List<MCheckinData> checkins = cm.getRecentCheckins();
+            List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
             for (MCheckinData data : checkins) {
                 if (data.exitTime == null || data.exitTime == 0) {
                     data.exitTime = System.currentTimeMillis();
                     cm.updateCheckin(data);
                     MLocation loc = lm.getLocation(data.locationId);
-                    Log.d(TAG, "Checking out from " + loc.name);
+                    Log.d(TAG, "Checking out from " + loc.name + " for: " + data.id);
                     Request request = new Request(loc.principal, "checkout", null);
                     request.send(v.getContext());
                 } else {
-                    Log.d(TAG, "exit time: " + data.exitTime);
+                    Log.d(TAG, "exit time: " + data.exitTime + " for: " + data.id);
                 }
             }
 		}
@@ -306,6 +310,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                     App.getDatabaseSource(OmniStanfordActivity.this));
             return cm.getRecentCheckins(MONTH);
         }
+        
         @Override
         protected void onPostExecute(List<MCheckinData> data) {
             constructMap(data);

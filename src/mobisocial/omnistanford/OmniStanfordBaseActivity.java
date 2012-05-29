@@ -140,6 +140,15 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
         }
     }
     
+    @Override
+    public void onResume() {
+        super.onResume();
+        String currentName = Util.getPickedAccountName(this);
+        if(currentName != null) {
+            getSupportActionBar().setTitle(currentName);
+        }
+    }
+    
     // TODO: remove this
     public static byte[] digestPrincipal(String principal) {
         try {
@@ -175,7 +184,8 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                     JSONObject one = new JSONObject();
                     try {
                         if (location.principal == null ||
-                                Util.getPickedAccountType(OmniStanfordBaseActivity.this) == null) {
+                                Util.getPickedAccountType(OmniStanfordBaseActivity.this) == null ||
+                                (location.feedUri != null && !location.feedUri.equals(""))) {
                             continue;
                         }
                         primary.put("visible", false);

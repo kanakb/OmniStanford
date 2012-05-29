@@ -6,6 +6,7 @@
     android:layout_alignParentBottom="true"
     android:layout_alignParentLeft="true"
     android:isScrollContainer="true"
+    android:focusable="false"
     android:orientation="vertical" >
 
  </LinearLayout>
