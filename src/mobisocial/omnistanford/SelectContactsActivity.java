@@ -94,7 +94,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     class GetDataTask extends AsyncTask<Long, Integer, Void> {
 		@Override
 		protected Void doInBackground(Long... locationId) {
-			mReq = new Request("arrillaga.stanford@gmail.com", "checkin", new MyHandler());
+			mReq = new Request("gates.stanford@gmail.com", "checkin", new MyHandler());
 			mReq.addParam("loc_id", "1");
 			mReq.send(getApplicationContext());
         	

@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 
 import mobisocial.omnistanford.db.LocationManager;
@@ -71,7 +72,7 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                 JSONObject one = new JSONObject();
                 try {
                     primary.put("visible", true);
-                    one.put("hashed", Base64.encodeToString(digestPrincipal("arrillaga.stanford@gmail.com"), Base64.DEFAULT));
+                    one.put("hashed", Base64.encodeToString(digestPrincipal("gates.stanford@gmail.com"), Base64.DEFAULT));
                     one.put("name", "Steve Fan");
                     one.put("type", "com.google");
                     arr.put(0, one);
@@ -109,7 +110,7 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                         	Log.i(TAG, loc.feedUri.toString());
                         	lm.updateLocation(loc);
 
-//                        	Request request = new Request("arrillaga.stanford@gmail.com", "checkin", null);
+//                        	Request request = new Request("gates.stanford@gmail.com", "checkin", null);
 //                        	request.addParam("dorm", "Off-Campus");
 //                        	request.addParam("department", "CS");
 //                        	request.send(this);
@@ -134,7 +135,8 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
         
         String currentName = Util.getPickedAccountName(this);
         if(currentName != null) {
-        	getSupportActionBar().setTitle(currentName);
+        	ActionBar bar = getSupportActionBar();
+        	if(bar != null) bar.setTitle("   " + currentName);
         }
     }
     

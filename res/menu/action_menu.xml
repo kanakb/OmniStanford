@@ -5,6 +5,11 @@
           android:title="@string/add_account_button"
           android:showAsAction="ifRoom" />
     
+    <item android:id="@+id/menu_schedule"
+          android:icon="@drawable/schedule"
+          android:title="@string/schedule"
+          android:showAsAction="ifRoom" />
+    
     <item android:id="@+id/menu_settings"
           android:icon="@drawable/action_settings"
           android:title="@string/settings_button"

@@ -34,6 +34,14 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/settings" />
+        <activity
+            android:name=".VisualizationActivity"
+            android:label="visualization"
+            android:theme="@style/Theme.Sherlock.Light.NoActionBar" />
+         <activity
+            android:name=".ScheduleActivity"
+            android:label="schedule"
+            android:theme="@style/Theme.Sherlock.Light" />
         <service android:name=".service.LocationService"></service>
         
         <receiver android:name=".MessageReceiver">

@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TAG = "DatabaseHelper";
     
     private static final String DB_NAME = "OmniStanford.db";
-    private static final int VERSION = 3;
+    private static final int VERSION = 5;
     
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
@@ -58,6 +58,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 MUserProperty.COL_ID, "INTEGER PRIMARY KEY",
                 MUserProperty.COL_NAME, "TEXT NOT NULL",
                 MUserProperty.COL_VALUE, "TEXT");
+        
+        createTable(db, MTag.TABLE,
+    			MTag.COL_ID, "INTEGER PRIMARY KEY",
+    			MTag.COL_NAME, "TEXT NOT NULL",
+    			MTag.COL_LOCATION_ID, "INTEGER NOT NULL",
+    			MTag.COL_CHECKIN_ID, "INTEGER NOT NULL",
+    			MTag.COL_START_TIME, "INTEGER NOT NULL",
+    			MTag.COL_END_TIME, "INTEGER NOT NULL");
     }
 
     @Override
@@ -74,6 +82,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     MUserProperty.COL_ID, "INTEGER PRIMARY KEY",
                     MUserProperty.COL_NAME, "TEXT NOT NULL",
                     MUserProperty.COL_VALUE, "TEXT");
+        }
+        if (oldVersion <= 3) {
+        	createTable(db, MTag.TABLE,
+        			MTag.COL_ID, "INTEGER PRIMARY KEY",
+        			MTag.COL_NAME, "TEXT NOT NULL",
+        			MTag.COL_LOCATION_ID, "INTEGER NOT NULL",
+        			MTag.COL_START_TIME, "INTEGER NOT NULL",
+        			MTag.COL_END_TIME, "INTEGER NOT NULL");
+        }
+        if (oldVersion <= 4) {
+        	db.execSQL("ALTER TABLE " + MTag.TABLE +
+                    " ADD COLUMN " + MTag.COL_CHECKIN_ID + " INTEGER NOT NULL;");
         }
         db.setVersion(VERSION);
     }

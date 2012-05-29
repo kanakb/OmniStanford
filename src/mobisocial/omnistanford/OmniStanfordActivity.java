@@ -43,7 +43,7 @@ import mobisocial.socialkit.musubi.Musubi;
 public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public static final String TAG = "OmniStanfordActivity";
     
-    private static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
+    public static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
     
     private Musubi mMusubi;
     private LinearLayout mButtonView;
@@ -224,6 +224,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             	Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
                 startActivityForResult(picker, REQUEST_PICK_ID);
                 return true;
+            case R.id.menu_schedule:
+            	Intent intent = new Intent(OmniStanfordActivity.this, ScheduleActivity.class);
+				startActivity(intent);
+				return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -232,7 +236,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private OnClickListener mCheckinClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-			Request req = new Request("arrillaga.stanford@gmail.com", "checkin", null);
+			Request req = new Request("gates.stanford@gmail.com", "checkin", null);
 			req.addParam("loc_id", "1")
 				.addParam("dorm", "McFarland")
 				.addParam("department", "CS");
@@ -244,7 +248,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     private OnClickListener mCheckoutClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
-		    Request req = new Request("arrillaga.stanford@gmail.com", "checkout", null);
+		    Request req = new Request("gates.stanford@gmail.com", "checkout", null);
             req.send(v.getContext());
             
 		    Log.d(TAG, "Checkout");

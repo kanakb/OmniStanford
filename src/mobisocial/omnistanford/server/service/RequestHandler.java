@@ -72,7 +72,7 @@ public class RequestHandler extends IntentService {
 		JSONObject from = req.optJSONObject("from");
 		JSONObject payload = req.optJSONObject("payload");
 		if(payload != null) {
-			MLocation location = mLocManager.getLocation("arrillaga.stanford@gmail.com");
+			MLocation location = mLocManager.getLocation("gates.stanford@gmail.com");
 			
 			MCheckinData checkin = new MCheckinData(
 					location.id, 
@@ -115,7 +115,7 @@ public class RequestHandler extends IntentService {
 	void onCheckout(long localUserId, JSONObject req, DbFeed feed) {
 		JSONObject from = req.optJSONObject("from");
 		if(from != null) {
-			MLocation location = mLocManager.getLocation("arrillaga.stanford@gmail.com");
+			MLocation location = mLocManager.getLocation("gates.stanford@gmail.com");
 			MCheckinData checkin = mCheckinManager.findOpenCheckinForUser(location.id, 
 					from.optString("name"), from.optString("type"), from.optString("hash"));
 			if(checkin != null) {
