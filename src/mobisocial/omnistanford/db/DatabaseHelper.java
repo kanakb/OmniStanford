@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TAG = "DatabaseHelper";
     
     private static final String DB_NAME = "OmniStanford.db";
-    private static final int VERSION = 5;
+    private static final int VERSION = 6;
     
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
@@ -66,6 +66,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     			MTag.COL_CHECKIN_ID, "INTEGER NOT NULL",
     			MTag.COL_START_TIME, "INTEGER NOT NULL",
     			MTag.COL_END_TIME, "INTEGER NOT NULL");
+
+        // checkin indexes
+        db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_entry_time_lookup ON " +
+                MCheckinData.TABLE + "(" + MCheckinData.COL_ENTRY_TIME + ")");
+        db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_loc_lookup ON " +
+                MCheckinData.TABLE + "(" + MCheckinData.COL_LOCATION_ID + ")");
+        db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_loc_entry_lookup ON " +
+                MCheckinData.TABLE + "(" + MCheckinData.COL_LOCATION_ID + "," + 
+                MCheckinData.COL_ENTRY_TIME + ")");
+        db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_entry_exit_lookup ON " +
+                MCheckinData.TABLE + "(" + MCheckinData.COL_ENTRY_TIME + "," + 
+                MCheckinData.COL_EXIT_TIME + ")");
+        
+        // discovery indexes
+        db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_checkin_lookup ON " +
+                MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + ")");
+        db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_user_type_lookup ON " +
+                MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + "," +
+                MDiscovery.COL_CONNECTION_TYPE + ")");
+        db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_user_lookup ON " +
+                MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + "," +
+                MDiscovery.COL_PERSON_ID + "," + MDiscovery.COL_CONNECTION_TYPE + ")");
+        
+        // discovered person indexes
+        db.execSQL("CREATE INDEX " + MDiscoveredPerson.TABLE + "_user_lookup ON " + 
+                MDiscoveredPerson.TABLE + "(" + MDiscoveredPerson.COL_IDENTIFIER + "," +
+                MDiscoveredPerson.COL_ACCOUNT_TYPE + ")");
     }
 
     @Override
@@ -93,7 +120,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         if (oldVersion <= 4) {
         	db.execSQL("ALTER TABLE " + MTag.TABLE +
-                    " ADD COLUMN " + MTag.COL_CHECKIN_ID + " INTEGER NOT NULL;");
+                    " ADD COLUMN " + MTag.COL_CHECKIN_ID + " INTEGER;");
+        }
+        if (oldVersion <= 5) {
+            // checkin indexes
+            db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_entry_time_lookup ON " +
+                    MCheckinData.TABLE + "(" + MCheckinData.COL_ENTRY_TIME + ")");
+            db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_loc_lookup ON " +
+                    MCheckinData.TABLE + "(" + MCheckinData.COL_LOCATION_ID + ")");
+            db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_loc_entry_lookup ON " +
+                    MCheckinData.TABLE + "(" + MCheckinData.COL_LOCATION_ID + "," + 
+                    MCheckinData.COL_ENTRY_TIME + ")");
+            db.execSQL("CREATE INDEX " + MCheckinData.TABLE + "_entry_exit_lookup ON " +
+                    MCheckinData.TABLE + "(" + MCheckinData.COL_ENTRY_TIME + "," + 
+                    MCheckinData.COL_EXIT_TIME + ")");
+            
+            // discovery indexes
+            db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_checkin_lookup ON " +
+                    MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + ")");
+            db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_user_type_lookup ON " +
+                    MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + "," +
+                    MDiscovery.COL_CONNECTION_TYPE + ")");
+            db.execSQL("CREATE INDEX " + MDiscovery.TABLE + "_user_lookup ON " +
+                    MDiscovery.TABLE + "(" + MDiscovery.COL_CHECKIN_ID + "," +
+                    MDiscovery.COL_PERSON_ID + "," + MDiscovery.COL_CONNECTION_TYPE + ")");
+            
+            // discovered person indexes
+            db.execSQL("CREATE INDEX " + MDiscoveredPerson.TABLE + "_user_lookup ON " + 
+                    MDiscoveredPerson.TABLE + "(" + MDiscoveredPerson.COL_IDENTIFIER + "," +
+                    MDiscoveredPerson.COL_ACCOUNT_TYPE + ")");
         }
         db.setVersion(VERSION);
     }
