@@ -1,6 +1,7 @@
 package mobisocial.omnistanford.db;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import android.database.Cursor;
@@ -122,6 +123,35 @@ public class CheckinManager extends ManagerBase {
             } else {
                 return null;
             }
+        } finally {
+            c.close();
+        }
+    }
+    
+    public List<MCheckinData> getDailyCheckins(long date) {
+    	Calendar calendar = Calendar.getInstance();
+    	calendar.setTimeInMillis(date);
+    	Long start, end;
+    	calendar.set(Calendar.HOUR_OF_DAY, 0);
+    	start = calendar.getTimeInMillis();
+    	calendar.set(Calendar.HOUR_OF_DAY, 24);
+    	end = calendar.getTimeInMillis();
+    	
+    	SQLiteDatabase db = initializeDatabase();
+        String table = MCheckinData.TABLE;
+        String selection = MCheckinData.COL_ENTRY_TIME + ">? AND " + 
+        	MCheckinData.COL_ENTRY_TIME + "<? AND (" + 
+        	MCheckinData.COL_EXIT_TIME + " IS NULL OR " +
+        	MCheckinData.COL_EXIT_TIME + " <?)";
+        String[] selectionArgs = new String[] { start.toString(), end.toString(), end.toString() };
+        String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
+        try {
+            List<MCheckinData> checkins = new ArrayList<MCheckinData>();
+            while (c.moveToNext()) {
+                checkins.add(fillInStandardFields(c));
+            }
+            return checkins;
         } finally {
             c.close();
         }

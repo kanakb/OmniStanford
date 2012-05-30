@@ -268,7 +268,7 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 			 start.set(Calendar.DAY_OF_MONTH, mDay);
 			 start.set(Calendar.HOUR_OF_DAY, 0);
 			 
-			 List<MCheckinData> checkins = cm.getRecentCheckins(System.currentTimeMillis() - start.getTimeInMillis());
+			 List<MCheckinData> checkins = cm.getDailyCheckins(start.getTimeInMillis());
 			 List<TimeSlot> slots = new ArrayList<TimeSlot>();
 			 if (checkins.size() == 0) {
 				 // test data
@@ -402,14 +402,12 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 						 LinearLayout layout = (LinearLayout) view;
 						 int childCount = layout.getChildCount();
 						 if(tags.size() != childCount) {
-							 Log.i(TAG, "add tags");
 							 int width = mWidth / tags.size();
 							 for(int i = 0; i < tags.size(); i++) {
 								 if(i < childCount) {
 									 TagTextView child = (TagTextView)layout.getChildAt(i);
 									 child.setWidth(width);
 								 } else {
-									 Log.i(TAG, "here");
 									 TagTextView newTag = new TagTextView(view.getContext(), ((MTag) tags.get(i)).name);
 									 newTag.setWidth(width);
 									 layout.addView(newTag);

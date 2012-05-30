@@ -133,19 +133,20 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
             return;
         }
         
-        String currentName = Util.getPickedAccountName(this);
-        if(currentName != null) {
-        	ActionBar bar = getSupportActionBar();
-        	if(bar != null) bar.setTitle("   " + currentName);
-        }
+        setActionBar();
     }
     
     @Override
     public void onResume() {
         super.onResume();
-        String currentName = Util.getPickedAccountName(this);
+        setActionBar();
+    }
+    
+    private void setActionBar() {
+    	String currentName = Util.getPickedAccountName(this);
         if(currentName != null) {
-            getSupportActionBar().setTitle(currentName);
+        	ActionBar bar = getSupportActionBar();
+        	if(bar != null) bar.setTitle("   " + currentName);
         }
     }
     
