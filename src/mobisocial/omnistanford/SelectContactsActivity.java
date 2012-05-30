@@ -204,6 +204,12 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         Log.d(TAG, "Showing list");
     }
     
+    @Override
+    public void onResume() {
+    	alternateUpdate();
+    	super.onResume();
+    }
+    
     private void alternateUpdate() {
         Cursor c = mDm.getDiscoveriesCursor(mCheckin.id);
         if (c != null) {

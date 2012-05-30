@@ -141,7 +141,7 @@ public class CheckinManager extends ManagerBase {
         String table = MCheckinData.TABLE;
         String selection = MCheckinData.COL_ENTRY_TIME + ">? AND " + 
         	MCheckinData.COL_ENTRY_TIME + "<? AND (" + 
-        	MCheckinData.COL_EXIT_TIME + " IS NULL OR " +
+        	MCheckinData.COL_EXIT_TIME + " IS NOT NULL OR " +
         	MCheckinData.COL_EXIT_TIME + " <?)";
         String[] selectionArgs = new String[] { start.toString(), end.toString(), end.toString() };
         String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";

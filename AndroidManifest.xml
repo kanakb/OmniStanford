@@ -18,6 +18,9 @@
         android:name=".server.db.OmniStanfordContentProvider"
         android:authorities="mobisocial.omnistanford.db" />
         
+        <receiver 
+            android:name=".receiver.PassiveLocationChangedReceiver"/>
+        
         
         <activity
             android:name=".OmniStanfordActivity"

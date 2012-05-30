@@ -84,15 +84,15 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             mButtonView = new LinearLayout(this);
             mButtonView.setOrientation(LinearLayout.VERTICAL);
             
-            Button checkinButton = new Button(this);
-            checkinButton.setText("Checkin");
-            checkinButton.setOnClickListener(mCheckinClickListener);
-            mButtonView.addView(checkinButton);
-            
-            Button checkoutButton = new Button(this);
-            checkoutButton.setText("Checkout");
-            checkoutButton.setOnClickListener(mCheckoutClickListener);
-            mButtonView.addView(checkoutButton);
+//            Button checkinButton = new Button(this);
+//            checkinButton.setText("Checkin");
+//            checkinButton.setOnClickListener(mCheckinClickListener);
+//            mButtonView.addView(checkinButton);
+//            
+//            Button checkoutButton = new Button(this);
+//            checkoutButton.setText("Checkout");
+//            checkoutButton.setOnClickListener(mCheckoutClickListener);
+//            mButtonView.addView(checkoutButton);
             
             ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
             
@@ -237,45 +237,45 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         }
     }
     
-    private OnClickListener mCheckinClickListener = new OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			Request req = new Request("gates.stanford@gmail.com", "checkin", null);
-			req.addParam("loc_id", "1")
-				.addParam("dorm", "McFarland")
-				.addParam("department", "CS");
-			req.send(v.getContext());
-			bindServices("locationUpdate");
-		}
-    };
+//    private OnClickListener mCheckinClickListener = new OnClickListener() {
+//		@Override
+//		public void onClick(View v) {
+//			Request req = new Request("gates.stanford@gmail.com", "checkin", null);
+//			req.addParam("loc_id", "1")
+//				.addParam("dorm", "McFarland")
+//				.addParam("department", "CS");
+//			req.send(v.getContext());
+//			bindServices("locationUpdate");
+//		}
+//    };
     
-    private OnClickListener mCheckoutClickListener = new OnClickListener() {
-		@Override
-		public void onClick(View v) {
-		    Request req = new Request("gates.stanford@gmail.com", "checkout", null);
-            req.send(v.getContext());
-            
-		    Log.d(TAG, "Checkout");
-            // Exit open checkins
-		    CheckinManager cm = new CheckinManager(
-		            App.getDatabaseSource(OmniStanfordActivity.this));
-		    LocationManager lm = new LocationManager(
-		            App.getDatabaseSource(OmniStanfordActivity.this));
-            List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
-            for (MCheckinData data : checkins) {
-                if (data.exitTime == null || data.exitTime == 0) {
-                    data.exitTime = System.currentTimeMillis();
-                    cm.updateCheckin(data);
-                    MLocation loc = lm.getLocation(data.locationId);
-                    Log.d(TAG, "Checking out from " + loc.name + " for: " + data.id);
-                    Request request = new Request(loc.principal, "checkout", null);
-                    request.send(v.getContext());
-                } else {
-                    Log.d(TAG, "exit time: " + data.exitTime + " for: " + data.id);
-                }
-            }
-		}
-    };
+//    private OnClickListener mCheckoutClickListener = new OnClickListener() {
+//		@Override
+//		public void onClick(View v) {
+//		    Request req = new Request("gates.stanford@gmail.com", "checkout", null);
+//            req.send(v.getContext());
+//            
+//		    Log.d(TAG, "Checkout");
+//            // Exit open checkins
+//		    CheckinManager cm = new CheckinManager(
+//		            App.getDatabaseSource(OmniStanfordActivity.this));
+//		    LocationManager lm = new LocationManager(
+//		            App.getDatabaseSource(OmniStanfordActivity.this));
+//            List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
+//            for (MCheckinData data : checkins) {
+//                if (data.exitTime == null || data.exitTime == 0) {
+//                    data.exitTime = System.currentTimeMillis();
+//                    cm.updateCheckin(data);
+//                    MLocation loc = lm.getLocation(data.locationId);
+//                    Log.d(TAG, "Checking out from " + loc.name + " for: " + data.id);
+//                    Request request = new Request(loc.principal, "checkout", null);
+//                    request.send(v.getContext());
+//                } else {
+//                    Log.d(TAG, "exit time: " + data.exitTime + " for: " + data.id);
+//                }
+//            }
+//		}
+//    };
     
     private void bindServices(String extra) {
     	Intent locationService = new Intent(this, LocationService.class);
