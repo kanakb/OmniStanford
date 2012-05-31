@@ -146,11 +146,12 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     	String currentName = Util.getPickedAccountName(this);
         if(currentName != null) {
         	ActionBar bar = getSupportActionBar();
-        	if(bar != null) bar.setTitle("   " + currentName);
+        	if(bar != null && currentName != null) {
+        	    bar.setTitle(currentName);
+        	}
         }
     }
     
-    // TODO: remove this
     public static byte[] digestPrincipal(String principal) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -160,8 +161,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
             throw new RuntimeException("Platform doesn't support sha256?!?!", e);
         }
     }
-    
-  
     
     protected class CreateFeedsTask extends AsyncTask<SQLiteOpenHelper, Void, LocationManager> {
         @Override

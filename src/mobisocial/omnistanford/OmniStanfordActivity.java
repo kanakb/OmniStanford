@@ -72,6 +72,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setTheme(R.style.Theme_Sherlock_ForceOverflow);
         
         if(setServerMode()) {
         	FragmentManager fragmentManager = getSupportFragmentManager();
