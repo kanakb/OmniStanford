@@ -251,13 +251,11 @@ public class LocationService extends Service {
 			        Log.d(TAG, "match found, no uri set");
 			    } else if (match != null && match.feedUri != null) {
 			        Log.d(TAG, "Found " + match.name);
-			        MCheckinData data = cm.getRecentCheckin(match.id);
-			        if (data == null) {
-			            List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
-			            if (possible.size() > 0) {
-			                data = possible.get(0);
-			            }
-			        }
+			        MCheckinData data = null;
+			        List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+		            if (possible.size() > 0) {
+		                data = possible.get(0);
+		            }
 			        // Only update if no recent checkins, or already checked out
 			        if (data == null) {
 			            data = new MCheckinData();
