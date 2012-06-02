@@ -130,21 +130,30 @@ public class CheckinManager extends ManagerBase {
     
     public List<MCheckinData> getDailyCheckins(long date) {
     	Calendar calendar = Calendar.getInstance();
+    	Long startOfToday, startOfYesterday, endOfToday, endOfTomorrow;
     	calendar.setTimeInMillis(date);
-    	Long start, end;
-    	calendar.set(Calendar.HOUR_OF_DAY, 0);
-    	start = calendar.getTimeInMillis();
     	calendar.set(Calendar.HOUR_OF_DAY, 24);
-    	end = calendar.getTimeInMillis();
+    	endOfToday = calendar.getTimeInMillis();
+    	calendar.add(Calendar.DATE, 1);
+    	endOfTomorrow = calendar.getTimeInMillis();
+    	
+    	calendar.setTimeInMillis(date);    	
+    	calendar.set(Calendar.HOUR_OF_DAY, 0);
+    	startOfToday = calendar.getTimeInMillis();
+    	calendar.add(Calendar.DATE, -1);
+    	startOfYesterday = calendar.getTimeInMillis();
+    	
     	
     	SQLiteDatabase db = initializeDatabase();
         String table = MCheckinData.TABLE;
-        String selection = MCheckinData.COL_ENTRY_TIME + ">? AND " + 
-        	MCheckinData.COL_ENTRY_TIME + "<? AND (" + 
-        	MCheckinData.COL_EXIT_TIME + " IS NOT NULL OR " +
-        	MCheckinData.COL_EXIT_TIME + " <?)";
-        String[] selectionArgs = new String[] { start.toString(), end.toString(), end.toString() };
-        String orderBy = MCheckinData.COL_ENTRY_TIME + " DESC";
+        String selection = MCheckinData.COL_ENTRY_TIME + ">? AND " +
+        	MCheckinData.COL_ENTRY_TIME + "<? AND (" +
+        	MCheckinData.COL_EXIT_TIME + " IS NULL OR ( " +
+        	MCheckinData.COL_EXIT_TIME + " >? AND " +
+        	MCheckinData.COL_EXIT_TIME + " <?))";
+        String[] selectionArgs = new String[] { startOfYesterday.toString(), endOfToday.toString(), 
+        		startOfToday.toString(), endOfTomorrow.toString() };
+        String orderBy = MCheckinData.COL_ENTRY_TIME + " ASC";
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, orderBy);
         try {
             List<MCheckinData> checkins = new ArrayList<MCheckinData>();

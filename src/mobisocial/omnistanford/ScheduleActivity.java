@@ -300,6 +300,9 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 				 slots.add(new TimeSlot(startTime, endTime, loc.name, loc.id, mMonth*32*32 + mDay*32 + 3));
 			 } else {
 				 for (MCheckinData checkin : checkins) {
+					 if(checkin.id == 10) {
+						 Log.i(TAG, "something wrong ");
+					 }
 					 MLocation loc = lm.getLocation(checkin.locationId);
 					 slots.add(new TimeSlot(checkin.entryTime, checkin.exitTime, loc.name, loc.id, checkin.id));
 				 }				 
@@ -401,31 +404,38 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 					 if(tags.size() > 0) {
 						 LinearLayout layout = (LinearLayout) view;
 						 int childCount = layout.getChildCount();
-						 if(tags.size() != childCount) {
-							 int width = mWidth / tags.size();
-							 for(int i = 0; i < tags.size(); i++) {
-								 if(i < childCount) {
-									 TagTextView child = (TagTextView)layout.getChildAt(i);
-									 child.setWidth(width);
-								 } else {
-									 TagTextView newTag = new TagTextView(view.getContext(), ((MTag) tags.get(i)).name);
-									 newTag.setWidth(width);
-									 layout.addView(newTag);
-								 }
+						 if(tags.size() == 4) {
+							 Log.i(TAG, "here");
+						 }
+						 int width = mWidth / tags.size();
+						 for(int i = 0; i < tags.size(); i++) {
+							 if(i < childCount) {
+								 TagTextView child = (TagTextView)layout.getChildAt(i);
+								 child.setWidth(width);
+							 } else {
+								 TagTextView newTag = new TagTextView(view.getContext(), ((MTag) tags.get(i)).name);
+								 newTag.setWidth(width);
+								 layout.addView(newTag);
 							 }
 						 }
 					 }
 					 return true;
 				 } else if(view.getId() == R.id.scheduleTitle) {
+					 StringBuilder text = new StringBuilder();
 					 @SuppressWarnings("unchecked")
 					 TimeSlot slot = (TimeSlot) ((List<Object>) data).get(0);
 					 Calendar start = Calendar.getInstance();
 					 start.setTimeInMillis(slot.start);
-					 Calendar end = Calendar.getInstance();
-					 end.setTimeInMillis(slot.end);
-
-					 ((TextView) view).setText(slot.locationName + " " + start.get(Calendar.HOUR_OF_DAY) + " - "
-							 + end.get(Calendar.HOUR_OF_DAY));
+					 text.append(slot.locationName + " " + start.get(Calendar.HOUR_OF_DAY));
+					 if(slot.end != null) {
+						 Calendar end = Calendar.getInstance();
+						 end.setTimeInMillis(slot.end);
+						 text.append(" - " + end.get(Calendar.HOUR_OF_DAY));
+						 if(start.get(Calendar.HOUR_OF_DAY) == 21 && end.get(Calendar.HOUR_OF_DAY) == 12) {
+							 Log.i(TAG, "something wrong");
+						 }
+					 }
+					 ((TextView) view).setText(text.toString());
 					 return true;
 				 }
 
@@ -436,8 +446,8 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 	 }
 	 
 	 public static class TimeSlot {
-		 public long start;
-		 public long end;
+		 public Long start;
+		 public Long end;
 		 public String locationName;
 		 public long locationId;
 		 public long checkinId;
