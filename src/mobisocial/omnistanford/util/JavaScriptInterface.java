@@ -11,10 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import mobisocial.omnistanford.App;
-import mobisocial.omnistanford.OmniStanfordActivity;
-import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.LocationManager;
-import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.db.MTag;
 import mobisocial.omnistanford.db.TagManager;
