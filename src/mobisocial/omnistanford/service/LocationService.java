@@ -257,12 +257,12 @@ public class LocationService extends Service {
 				Log.d(TAG, "match found, no uri set");
 			} else if (match != null && match.feedUri != null) {
 				Log.d(TAG, "Found " + match.name);
-				 MCheckinData data = null;
-				 List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
-				 if (possible.size() > 0) {
-					 data = possible.get(0);
-				 }
-				 // Only update if no recent checkins, or already checked out
+				MCheckinData data = null;
+				List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+				if (possible.size() > 0) {
+				    data = possible.get(0);
+				}
+				// Only update if no recent checkins, or already checked out
 				if (data == null) {
 					data = new MCheckinData();
 					data.entryTime = System.currentTimeMillis();
@@ -328,7 +328,7 @@ public class LocationService extends Service {
 			
 			boolean isAtDifferentLocation = false;
 			if(match != null) {
-				List<MCheckinData> recentCheckins = cm.getRecentCheckins(MONTH);
+				List<MCheckinData> recentCheckins = cm.getRecentOpenCheckins(MONTH);
 				for(MCheckinData checkin : recentCheckins) {
 					if(checkin.locationId != match.id) {
 						isAtDifferentLocation = true;
@@ -351,6 +351,7 @@ public class LocationService extends Service {
     								continue;
     							}
                                 data.exitTime = System.currentTimeMillis();
+                                Log.d(TAG, "exiting id " + data.id + " " + loc.name);
     							cm.updateCheckin(data);
     							Request request = new Request(loc.principal, "checkout", null);
     							request.send(LocationService.this);
