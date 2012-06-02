@@ -31,6 +31,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -79,13 +80,17 @@ public class LocationService extends Service {
 			Location loc = intent.getParcelableExtra("location");
 			notifyLocationUpdate(loc);
 		} else {
-			Location loc = requestInitialLocation();
-			if(loc != null) {
-				notifyLocationUpdate(loc);
-				requestPeriodicalLocation(loc);
-			}
+	        Location loc = requestInitialLocation();
+	        if(loc != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+	            notifyLocationUpdate(loc);
+	            requestPeriodicalLocation(loc);
+	        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO) {
+	            if (loc != null) {
+	                notifyLocationUpdate(loc);
+	            }
+	            requestPeriodicalLocationLegacy(loc);
+	        }
 		}
-		
 		return START_STICKY;
 	}
 	
@@ -127,12 +132,14 @@ public class LocationService extends Service {
 			}
 		}
 		
-		if (bestTime < maxTime || bestAccuracy > maxDistance) { 
-			// return most recent first, and try to find a more accurate one
-			Criteria criteria = new Criteria();
-			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-			criteria.setPowerRequirement(Criteria.POWER_LOW);
-			mLocationManager.requestSingleUpdate(criteria, mSingleLocationUpdateListener, getMainLooper());
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+    		if (bestTime < maxTime || bestAccuracy > maxDistance) { 
+    			// return most recent first, and try to find a more accurate one
+    			Criteria criteria = new Criteria();
+    			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+    			criteria.setPowerRequirement(Criteria.POWER_LOW);
+    			mLocationManager.requestSingleUpdate(criteria, mSingleLocationUpdateListener, getMainLooper());
+    		}
 		}
 		Log.i(TAG, "first best result:" + bestResult.toString());
 		return bestResult;
@@ -156,6 +163,29 @@ public class LocationService extends Service {
 			mLocationManager.requestLocationUpdates(MIN_TIME_LONG, MIN_DISTANCE, criteria, mLocationListener, getMainLooper());
 			mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, MIN_TIME_LONG, MIN_DISTANCE * 5, mLocationListener);
 		}
+	}
+	
+	private void requestPeriodicalLocationLegacy(Location location) {
+	    if (location != null && isOnCampus(location)) {
+	        Log.i(TAG, "at Stanford");
+	        mLocationManager.removeUpdates(mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+
+            Intent activeIntent = new Intent(this, PassiveLocationChangedReceiver.class);
+            PendingIntent locationListenerPendingIntent = 
+                    PendingIntent.getBroadcast(this, 0, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, locationListenerPendingIntent);
+	    } else {
+            mLocationManager.removeUpdates(mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                    MIN_TIME_LONG, MIN_DISTANCE, mLocationListener);
+	    }
 	}
 	
 	private boolean isOnCampus(Location loc) {
@@ -227,12 +257,12 @@ public class LocationService extends Service {
 				Log.d(TAG, "match found, no uri set");
 			} else if (match != null && match.feedUri != null) {
 				Log.d(TAG, "Found " + match.name);
-				 MCheckinData data = null;
-				 List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
-				 if (possible.size() > 0) {
-					 data = possible.get(0);
-				 }
-				 // Only update if no recent checkins, or already checked out
+				MCheckinData data = null;
+				List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+				if (possible.size() > 0) {
+				    data = possible.get(0);
+				}
+				// Only update if no recent checkins, or already checked out
 				if (data == null) {
 					data = new MCheckinData();
 					data.entryTime = System.currentTimeMillis();
@@ -298,7 +328,7 @@ public class LocationService extends Service {
 			
 			boolean isAtDifferentLocation = false;
 			if(match != null) {
-				List<MCheckinData> recentCheckins = cm.getRecentCheckins(MONTH);
+				List<MCheckinData> recentCheckins = cm.getRecentOpenCheckins(MONTH);
 				for(MCheckinData checkin : recentCheckins) {
 					if(checkin.locationId != match.id) {
 						isAtDifferentLocation = true;
@@ -306,26 +336,26 @@ public class LocationService extends Service {
 					}
 				}
 			}
-			
 			if(match == null || match.feedUri == null || isAtDifferentLocation){
-				// Exit open checkins (if we get enough updates outside a valid location)
-				Log.d(TAG, "exiting open");
-				synchronized(mCheckoutCount) {
-					mCheckoutCount++;
-					if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
-						mCheckoutCount = 0;
-						List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
-						for (MCheckinData data : checkins) {
-							if (data.exitTime == null || data.exitTime == 0) {
-								data.exitTime = System.currentTimeMillis();
-								MLocation loc = mLm.getLocation(data.locationId);
-								if(isAtDifferentLocation && loc.id == match.id) {
-									continue;
-								}
-								cm.updateCheckin(data);
-								Request request = new Request(loc.principal, "checkout", null);
-								request.send(LocationService.this);
-							}
+    			// Exit open checkins (if we get enough updates outside a valid location)
+    			Log.d(TAG, "exiting open");
+    			synchronized(mCheckoutCount) {
+    				mCheckoutCount++;
+    				if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
+    					mCheckoutCount = 0;
+    					List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
+    					for (MCheckinData data : checkins) {
+    						if (data.exitTime == null || data.exitTime == 0) {
+    							MLocation loc = mLm.getLocation(data.locationId);
+    							if(isAtDifferentLocation && loc.id == match.id) {
+    								continue;
+    							}
+                                data.exitTime = System.currentTimeMillis();
+                                Log.d(TAG, "exiting id " + data.id + " " + loc.name);
+    							cm.updateCheckin(data);
+    							Request request = new Request(loc.principal, "checkout", null);
+    							request.send(LocationService.this);
+    						}
 						}
 					}
 				}
@@ -346,21 +376,17 @@ public class LocationService extends Service {
 
        // Check whether the new location fix is newer or older
        long timeDelta = location.getTime() - mCurrent.getTime();
-       boolean isSignificantlyNewer = timeDelta > MIN_TIME_SHORT;
        boolean isSignificantlyOlder = timeDelta < -MIN_TIME_SHORT;
        boolean isNewer = timeDelta > 0;
 
-       // If it's been more than two minutes since the current location, use the new location
-       // because the user has likely moved
-       if (isSignificantlyNewer) {
-           return true;
        // If the new location is more than two minutes older, it must be worse
-       } else if (isSignificantlyOlder) {
+       if (isSignificantlyOlder) {
            return false;
        }
 
        // Check whether the new location fix is more or less accurate
        int accuracyDelta = (int) (location.getAccuracy() - mCurrent.getAccuracy());
+       Log.d(TAG, location.getProvider() + " accuracy: " + location.getAccuracy());
        boolean isLessAccurate = accuracyDelta > 0;
        boolean isMoreAccurate = accuracyDelta < 0;
        boolean isSignificantlyLessAccurate = accuracyDelta > MIN_DISTANCE;
