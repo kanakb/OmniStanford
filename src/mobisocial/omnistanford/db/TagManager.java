@@ -142,17 +142,27 @@ public class TagManager extends ManagerBase {
 	
 	public List<MTag> getDailyTags(Date day) {
 		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(day);
-		calendar.set(Calendar.HOUR_OF_DAY, 0);
-		Long start = calendar.getTimeInMillis();
-		calendar.set(Calendar.HOUR_OF_DAY, 24);
-		Long end = calendar.getTimeInMillis();
+    	Long startOfToday, startOfYesterday, endOfToday, endOfTomorrow;
+    	calendar.setTime(day);
+    	calendar.set(Calendar.HOUR_OF_DAY, 24);
+    	endOfToday = calendar.getTimeInMillis();
+    	calendar.add(Calendar.DATE, 1);
+    	endOfTomorrow = calendar.getTimeInMillis();
+    	
+    	calendar.setTime(day);
+    	calendar.set(Calendar.HOUR_OF_DAY, 0);
+    	startOfToday = calendar.getTimeInMillis();
+    	calendar.add(Calendar.DATE, -1);
+    	startOfYesterday = calendar.getTimeInMillis();
 		
         SQLiteDatabase db = initializeDatabase();
         String table = MTag.TABLE;
-        String selection = MTag.COL_START_TIME + ">=? AND " + 
-        				MTag.COL_END_TIME + "<=?";
-        String[] selectionArgs = new String[] { Long.toString(start), Long.toString(end) };
+        String selection = MTag.COL_START_TIME + ">? AND " +
+	    	MTag.COL_START_TIME + "<? AND " +
+	    	MTag.COL_END_TIME + " >? AND " +
+	    	MTag.COL_END_TIME + " <?";
+        String[] selectionArgs = new String[] { startOfYesterday.toString(), endOfToday.toString(), 
+        		startOfToday.toString(), endOfTomorrow.toString() };
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
     	List<MTag> tags = new ArrayList<MTag>();
         try {
