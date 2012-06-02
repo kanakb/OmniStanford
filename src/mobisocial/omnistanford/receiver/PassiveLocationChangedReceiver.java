@@ -1,5 +1,6 @@
 package mobisocial.omnistanford.receiver;
 
+import mobisocial.omnistanford.service.LocationService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +13,6 @@ public class PassiveLocationChangedReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Log.i(TAG, "onReceive");
 		String key = LocationManager.KEY_LOCATION_CHANGED;
 	    Location location = null;
 	    
@@ -21,6 +21,10 @@ public class PassiveLocationChangedReceiver extends BroadcastReceiver {
 	    	// directly.
 	    	location = (Location)intent.getExtras().get(key);   
 	    	Log.i(TAG, "received broadcast location: " + location.toString());
+	    	
+	    	Intent serviceIntent = new Intent(context, LocationService.class);
+	    	serviceIntent.putExtra("location", location);
+	    	context.startService(serviceIntent);
 	    }
 	}
 }
