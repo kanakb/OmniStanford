@@ -29,6 +29,7 @@ import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbObj;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -130,8 +131,16 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CREATE_FEED) {
-            if (resultCode == RESULT_OK) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 Toast.makeText(this, "Successfully created feed!", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                PackageManager pm = getPackageManager();
+                intent = pm.getLaunchIntentForPackage("mobisocial.musubi");
+                intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                intent.setData(data.getData());
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                finish();
             } else {
                 Toast.makeText(this, "Could not create feed.", Toast.LENGTH_SHORT).show();
             }
@@ -202,6 +211,8 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         
         wrapper.addView(mListView);
         Log.d(TAG, "Showing list");
+        
+        getSupportActionBar().setTitle("Start Something");
     }
     
     @Override

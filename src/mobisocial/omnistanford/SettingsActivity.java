@@ -125,6 +125,7 @@ public class SettingsActivity extends OmniStanfordBaseActivity {
         }
         
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("Settings");
     }
     
     @Override
