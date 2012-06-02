@@ -75,11 +75,17 @@ public class LocationService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
-		Location loc = requestInitialLocation();
-		if(loc != null) {
+		if(intent.hasExtra("location")) {
+			Location loc = intent.getParcelableExtra("location");
 			notifyLocationUpdate(loc);
-			requestPeriodicalLocation(loc);
+		} else {
+			Location loc = requestInitialLocation();
+			if(loc != null) {
+				notifyLocationUpdate(loc);
+				requestPeriodicalLocation(loc);
+			}
 		}
+		
 		return START_STICKY;
 	}
 	
@@ -148,7 +154,7 @@ public class LocationService extends Service {
 			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
 			criteria.setPowerRequirement(Criteria.POWER_LOW);
 			mLocationManager.requestLocationUpdates(MIN_TIME_LONG, MIN_DISTANCE, criteria, mLocationListener, getMainLooper());
-			mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, MIN_TIME_LONG, MIN_DISTANCE, mLocationListener);
+			mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, MIN_TIME_LONG, MIN_DISTANCE * 5, mLocationListener);
 		}
 	}
 	
@@ -188,69 +194,10 @@ public class LocationService extends Service {
 	};
 	
 	private LocationListener mLocationListener = new LocationListener() {
-	    private static final int TWO_MINUTES = 1000 * 60 * 2;
-
-	    /** Determines whether one Location reading is better than the current Location fix
-	      * @param location  The new Location that you want to evaluate
-	      * @param currentBestLocation  The current Location fix, to which you want to compare the new one
-	      * Thanks, Android documentation.
-	      */
-	    protected boolean isBetterLocation(Location location, Location currentBestLocation) {
-	        if (currentBestLocation == null) {
-	            // A new location is always better than no location
-	            return true;
-	        }
-
-	        // Check whether the new location fix is newer or older
-	        long timeDelta = location.getTime() - currentBestLocation.getTime();
-	        boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
-	        boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
-	        boolean isNewer = timeDelta > 0;
-
-	        // If it's been more than two minutes since the current location, use the new location
-	        // because the user has likely moved
-	        if (isSignificantlyNewer) {
-	            return true;
-	        // If the new location is more than two minutes older, it must be worse
-	        } else if (isSignificantlyOlder) {
-	            return false;
-	        }
-
-	        // Check whether the new location fix is more or less accurate
-	        int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
-	        boolean isLessAccurate = accuracyDelta > 0;
-	        boolean isMoreAccurate = accuracyDelta < 0;
-	        boolean isSignificantlyLessAccurate = accuracyDelta > 200;
-
-	        // Check if the old and new location are from the same provider
-	        boolean isFromSameProvider = isSameProvider(location.getProvider(),
-	                currentBestLocation.getProvider());
-
-	        // Determine location quality using a combination of timeliness and accuracy
-	        if (isMoreAccurate) {
-	            return true;
-	        } else if (isNewer && !isLessAccurate) {
-	            return true;
-	        } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
-	            return true;
-	        }
-	        return false;
-	    }
-
-	    /** Checks whether two providers are the same */
-	    private boolean isSameProvider(String provider1, String provider2) {
-	        if (provider1 == null) {
-	          return provider2 == null;
-	        }
-	        return provider1.equals(provider2);
-	    }
-	    
 		@Override
 		public void onLocationChanged(Location location) {
 			Log.i(TAG, "received location + " + location.toString());
-			if (isBetterLocation(location, mCurrent)) {
-				notifyLocationUpdate(location);
-			}
+			notifyLocationUpdate(location);
 		}
 
 		@Override
@@ -270,34 +217,60 @@ public class LocationService extends Service {
 	};
 	
 	private void notifyLocationUpdate(Location location) {
-		Log.i(TAG, "location is better");
-		mCurrent = location;
-		CheckinManager cm = new CheckinManager(App.getDatabaseSource(LocationService.this));
-		MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
-		
-		if (match != null && match.feedUri == null) {
-			Log.d(TAG, "match found, no uri set");
-		} else if (match != null && match.feedUri != null) {
-			Log.d(TAG, "Found " + match.name);
-			 MCheckinData data = null;
-			 List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
-			 if (possible.size() > 0) {
-				 data = possible.get(0);
-			 }
-			 // Only update if no recent checkins, or already checked out
-			if (data == null) {
-				data = new MCheckinData();
-				data.entryTime = System.currentTimeMillis();
-				data.locationId = match.id;
-				MAccount acct = Util.loadAccount(LocationService.this);
-				if (acct != null) {
-					data.accountId = acct.id;
+		if(isBetterLocation(location)) {
+			Log.i(TAG, "location is better");
+			mCurrent = location;
+			CheckinManager cm = new CheckinManager(App.getDatabaseSource(LocationService.this));
+			MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
+			
+			if (match != null && match.feedUri == null) {
+				Log.d(TAG, "match found, no uri set");
+			} else if (match != null && match.feedUri != null) {
+				Log.d(TAG, "Found " + match.name);
+				 MCheckinData data = null;
+				 List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+				 if (possible.size() > 0) {
+					 data = possible.get(0);
+				 }
+				 // Only update if no recent checkins, or already checked out
+				if (data == null) {
+					data = new MCheckinData();
+					data.entryTime = System.currentTimeMillis();
+					data.locationId = match.id;
+					MAccount acct = Util.loadAccount(LocationService.this);
+					if (acct != null) {
+						data.accountId = acct.id;
 
-					// Check in locally
-					cm.insertCheckin(data);
-					Log.d(TAG, "inserted with id " + data.id + " at " + data.entryTime);
+						// Check in locally
+						cm.insertCheckin(data);
+						Log.d(TAG, "inserted with id " + data.id + " at " + data.entryTime);
 
-					// Check in remotely
+						// Check in remotely
+						PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
+						Request request = new Request(match.principal, "checkin", mResponseHandler);
+						request.addParam("id", new Long(data.id).toString());
+						MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
+						if (dorm != null) {
+							request.addParam(SettingsActivity.RESIDENCE, dorm.value);
+						}
+						MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
+						if (department != null) {
+							request.addParam(SettingsActivity.DEPARTMENT, department.value);
+						}
+						MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
+						if (enabled != null) {
+							boolean shouldSend = "true".equals(enabled.value) ? true : false;
+							if (shouldSend) {
+								long now = System.currentTimeMillis();
+								if (now - MINUTE > mLastRequest) {
+									mLastRequest = now;
+									request.send(LocationService.this);
+								}
+							}
+						}
+					}
+				} else {
+					// Only check in remotely
 					PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
 					Request request = new Request(match.principal, "checkin", mResponseHandler);
 					request.addParam("id", new Long(data.id).toString());
@@ -321,68 +294,99 @@ public class LocationService extends Service {
 						}
 					}
 				}
-			} else {
-				// Only check in remotely
-				PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
-				Request request = new Request(match.principal, "checkin", mResponseHandler);
-				request.addParam("id", new Long(data.id).toString());
-				MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
-				if (dorm != null) {
-					request.addParam(SettingsActivity.RESIDENCE, dorm.value);
-				}
-				MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
-				if (department != null) {
-					request.addParam(SettingsActivity.DEPARTMENT, department.value);
-				}
-				MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
-				if (enabled != null) {
-					boolean shouldSend = "true".equals(enabled.value) ? true : false;
-					if (shouldSend) {
-						long now = System.currentTimeMillis();
-						if (now - MINUTE > mLastRequest) {
-							mLastRequest = now;
-							request.send(LocationService.this);
-						}
+			}
+			
+			boolean isAtDifferentLocation = false;
+			if(match != null) {
+				List<MCheckinData> recentCheckins = cm.getRecentCheckins(MONTH);
+				for(MCheckinData checkin : recentCheckins) {
+					if(checkin.locationId != match.id) {
+						isAtDifferentLocation = true;
+						break;
 					}
 				}
 			}
-		}
-		
-		boolean isAtDifferentLocation = false;
-		if(match != null) {
-			List<MCheckinData> recentCheckins = cm.getRecentCheckins(MONTH);
-			for(MCheckinData checkin : recentCheckins) {
-				if(checkin.locationId != match.id) {
-					isAtDifferentLocation = true;
-					break;
-				}
-			}
-		}
-		
-		if(match == null || match.feedUri == null || isAtDifferentLocation){
-			// Exit open checkins (if we get enough updates outside a valid location)
-			Log.d(TAG, "exiting open");
-			synchronized(mCheckoutCount) {
-				mCheckoutCount++;
-				if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
-					mCheckoutCount = 0;
-					List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
-					for (MCheckinData data : checkins) {
-						if (data.exitTime == null || data.exitTime == 0) {
-							data.exitTime = System.currentTimeMillis();
-							MLocation loc = mLm.getLocation(data.locationId);
-							if(isAtDifferentLocation && loc.id == match.id) {
-								continue;
+			
+			if(match == null || match.feedUri == null || isAtDifferentLocation){
+				// Exit open checkins (if we get enough updates outside a valid location)
+				Log.d(TAG, "exiting open");
+				synchronized(mCheckoutCount) {
+					mCheckoutCount++;
+					if (mCheckoutCount > MAX_OUTSIDE_COUNT) {
+						mCheckoutCount = 0;
+						List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
+						for (MCheckinData data : checkins) {
+							if (data.exitTime == null || data.exitTime == 0) {
+								data.exitTime = System.currentTimeMillis();
+								MLocation loc = mLm.getLocation(data.locationId);
+								if(isAtDifferentLocation && loc.id == match.id) {
+									continue;
+								}
+								cm.updateCheckin(data);
+								Request request = new Request(loc.principal, "checkout", null);
+								request.send(LocationService.this);
 							}
-							cm.updateCheckin(data);
-							Request request = new Request(loc.principal, "checkout", null);
-							request.send(LocationService.this);
 						}
 					}
 				}
-			}
+			}	
 		}
 	}
+	
+	/** Determines whether one Location reading is better than the current Location fix
+     * @param location  The new Location that you want to evaluate
+     * @param currentBestLocation  The current Location fix, to which you want to compare the new one
+     * Thanks, Android documentation.
+     */
+   protected boolean isBetterLocation(Location location) {
+       if (mCurrent == null) {
+           // A new location is always better than no location
+           return true;
+       }
+
+       // Check whether the new location fix is newer or older
+       long timeDelta = location.getTime() - mCurrent.getTime();
+       boolean isSignificantlyNewer = timeDelta > MIN_TIME_SHORT;
+       boolean isSignificantlyOlder = timeDelta < -MIN_TIME_SHORT;
+       boolean isNewer = timeDelta > 0;
+
+       // If it's been more than two minutes since the current location, use the new location
+       // because the user has likely moved
+       if (isSignificantlyNewer) {
+           return true;
+       // If the new location is more than two minutes older, it must be worse
+       } else if (isSignificantlyOlder) {
+           return false;
+       }
+
+       // Check whether the new location fix is more or less accurate
+       int accuracyDelta = (int) (location.getAccuracy() - mCurrent.getAccuracy());
+       boolean isLessAccurate = accuracyDelta > 0;
+       boolean isMoreAccurate = accuracyDelta < 0;
+       boolean isSignificantlyLessAccurate = accuracyDelta > MIN_DISTANCE;
+
+       // Check if the old and new location are from the same provider
+       boolean isFromSameProvider = isSameProvider(location.getProvider(),
+    		   mCurrent.getProvider());
+
+       // Determine location quality using a combination of timeliness and accuracy
+       if (isMoreAccurate) {
+           return true;
+       } else if (isNewer && !isLessAccurate) {
+           return true;
+       } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+           return true;
+       }
+       return false;
+   }
+
+   /** Checks whether two providers are the same */
+   private boolean isSameProvider(String provider1, String provider2) {
+       if (provider1 == null) {
+         return provider2 == null;
+       }
+       return provider1.equals(provider2);
+   }
 	
 	// For a given checkin, get some discovery information set up
 	private ResponseHandler mResponseHandler = new ResponseHandler() {
