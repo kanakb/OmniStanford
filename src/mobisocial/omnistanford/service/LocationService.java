@@ -31,6 +31,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -76,9 +77,14 @@ public class LocationService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
 		Location loc = requestInitialLocation();
-		if(loc != null) {
+		if(loc != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
 			notifyLocationUpdate(loc);
 			requestPeriodicalLocation(loc);
+		} else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO) {
+		    if (loc != null) {
+		        notifyLocationUpdate(loc);
+		    }
+		    requestPeriodicalLocationLegacy(loc);
 		}
 		return START_STICKY;
 	}
@@ -121,12 +127,14 @@ public class LocationService extends Service {
 			}
 		}
 		
-		if (bestTime < maxTime || bestAccuracy > maxDistance) { 
-			// return most recent first, and try to find a more accurate one
-			Criteria criteria = new Criteria();
-			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-			criteria.setPowerRequirement(Criteria.POWER_LOW);
-			mLocationManager.requestSingleUpdate(criteria, mSingleLocationUpdateListener, getMainLooper());
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+    		if (bestTime < maxTime || bestAccuracy > maxDistance) { 
+    			// return most recent first, and try to find a more accurate one
+    			Criteria criteria = new Criteria();
+    			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+    			criteria.setPowerRequirement(Criteria.POWER_LOW);
+    			mLocationManager.requestSingleUpdate(criteria, mSingleLocationUpdateListener, getMainLooper());
+    		}
 		}
 		Log.i(TAG, "first best result:" + bestResult.toString());
 		return bestResult;
@@ -150,6 +158,29 @@ public class LocationService extends Service {
 			mLocationManager.requestLocationUpdates(MIN_TIME_LONG, MIN_DISTANCE, criteria, mLocationListener, getMainLooper());
 			mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, MIN_TIME_LONG, MIN_DISTANCE, mLocationListener);
 		}
+	}
+	
+	private void requestPeriodicalLocationLegacy(Location location) {
+	    if (location != null && isOnCampus(location)) {
+	        Log.i(TAG, "at Stanford");
+	        mLocationManager.removeUpdates(mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+
+            Intent activeIntent = new Intent(this, PassiveLocationChangedReceiver.class);
+            PendingIntent locationListenerPendingIntent = 
+                    PendingIntent.getBroadcast(this, 0, activeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, locationListenerPendingIntent);
+	    } else {
+            mLocationManager.removeUpdates(mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+            mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                    MIN_TIME_LONG, MIN_DISTANCE, mLocationListener);
+	    }
 	}
 	
 	private boolean isOnCampus(Location loc) {
@@ -279,12 +310,12 @@ public class LocationService extends Service {
 			Log.d(TAG, "match found, no uri set");
 		} else if (match != null && match.feedUri != null) {
 			Log.d(TAG, "Found " + match.name);
-			 MCheckinData data = null;
-			 List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
-			 if (possible.size() > 0) {
-				 data = possible.get(0);
-			 }
-			 // Only update if no recent checkins, or already checked out
+            MCheckinData data = null;
+            List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+            if (possible.size() > 0) {
+                data = possible.get(0);
+            }
+			// Only update if no recent checkins, or already checked out
 			if (data == null) {
 				data = new MCheckinData();
 				data.entryTime = System.currentTimeMillis();
@@ -369,11 +400,11 @@ public class LocationService extends Service {
 					List<MCheckinData> checkins = cm.getRecentOpenCheckins(MONTH);
 					for (MCheckinData data : checkins) {
 						if (data.exitTime == null || data.exitTime == 0) {
-							data.exitTime = System.currentTimeMillis();
 							MLocation loc = mLm.getLocation(data.locationId);
 							if(isAtDifferentLocation && loc.id == match.id) {
 								continue;
 							}
+                            data.exitTime = System.currentTimeMillis();
 							cm.updateCheckin(data);
 							Request request = new Request(loc.principal, "checkout", null);
 							request.send(LocationService.this);
