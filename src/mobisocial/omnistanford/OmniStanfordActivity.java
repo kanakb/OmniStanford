@@ -1,5 +1,7 @@
 package mobisocial.omnistanford;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -155,8 +157,15 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             for (MCheckinData checkin : checkins) {
                 HashMap<String, String> hm = new HashMap<String, String>();
                 MLocation loc = lm.getLocation(checkin.locationId);
+                Format fullFormatter = new SimpleDateFormat("M/d/yyyy h:mm a");
                 hm.put("title", loc.name);
-                hm.put("subtitle", new Date(checkin.entryTime).toString());
+                if (checkin.exitTime == null || checkin.exitTime == 0L) {
+                    hm.put("subtitle2", "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
+                    hm.put("subtitle", "You are currently here.");
+                } else {
+                    hm.put("subtitle", "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
+                    hm.put("subtitle2", "Left at " + fullFormatter.format(new Date(checkin.exitTime)));
+                } 
                 mHms.add(hm);
                 mIdMap.put(new Long(mHms.size()), checkin.id);
             }
@@ -165,8 +174,8 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     
     
     private void showRecent(LinearLayout wrapper) {
-        String[] from = new String[] { "title", "subtitle" };
-        int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle };
+        String[] from = new String[] { "title", "subtitle", "subtitle2" };
+        int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle, R.id.plainSubtitle2 };
         synchronized(this) {
             if (mHms == null) {
                 mHms = new ArrayList<HashMap<String, String>>();
