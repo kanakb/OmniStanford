@@ -28,4 +28,15 @@
         android:paddingRight="8dp"
         android:paddingLeft="8dp" />
  
+    <TextView
+        android:id="@+id/plainSubtitle2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp"
+        android:textStyle="normal"
+        android:paddingRight="8dp"
+        android:paddingLeft="8dp" />
+ 
 </LinearLayout>
