@@ -76,21 +76,24 @@ public class LocationService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
-		if(intent != null && intent.hasExtra("location")) {
-			Location loc = intent.getParcelableExtra("location");
-			notifyLocationUpdate(loc);
-		} else {
-	        Location loc = requestInitialLocation();
-	        if(loc != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-	            notifyLocationUpdate(loc);
-	            requestPeriodicalLocation(loc);
-	        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO) {
-	            if (loc != null) {
-	                notifyLocationUpdate(loc);
-	            }
-	            requestPeriodicalLocationLegacy(loc);
-	        }
+		if(intent != null) {
+			if(intent.hasExtra("location")) {
+				Location loc = intent.getParcelableExtra("location");
+				notifyLocationUpdate(loc);
+			} else {
+		        Location loc = requestInitialLocation();
+		        if(loc != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+		            notifyLocationUpdate(loc);
+		            requestPeriodicalLocation(loc);
+		        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.FROYO) {
+		            if (loc != null) {
+		                notifyLocationUpdate(loc);
+		            }
+		            requestPeriodicalLocationLegacy(loc);
+		        }
+			}
 		}
+		
 		return START_STICKY;
 	}
 	
@@ -160,7 +163,7 @@ public class LocationService extends Service {
 			Criteria criteria = new Criteria();
 			criteria.setAccuracy(Criteria.ACCURACY_COARSE);
 			criteria.setPowerRequirement(Criteria.POWER_LOW);
-			mLocationManager.requestLocationUpdates(MIN_TIME_LONG, MIN_DISTANCE, criteria, mLocationListener, getMainLooper());
+			mLocationManager.requestLocationUpdates(MIN_TIME_LONG, MIN_DISTANCE * 5, criteria, mLocationListener, getMainLooper());
 			mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, MIN_TIME_LONG, MIN_DISTANCE * 5, mLocationListener);
 		}
 	}
