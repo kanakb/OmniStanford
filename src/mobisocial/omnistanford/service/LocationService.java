@@ -76,7 +76,7 @@ public class LocationService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
-		if(intent.hasExtra("location")) {
+		if(intent != null && intent.hasExtra("location")) {
 			Location loc = intent.getParcelableExtra("location");
 			notifyLocationUpdate(loc);
 		} else {
