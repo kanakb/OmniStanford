@@ -27,6 +27,7 @@ import mobisocial.omnistanford.util.Request;
 import mobisocial.omnistanford.util.ResponseHandler;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbObj;
+import mobisocial.socialkit.musubi.Musubi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -176,6 +177,9 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         }
         Log.d(TAG, "checkinId: " + mCheckin.id);
         mLocal = (mCheckin.exitTime == null || mCheckin.exitTime == 0L) ? false : true;
+        if (!Musubi.isMusubiInstalled(this)) {
+            mLocal = true;
+        }
         
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
         mCursorAdapter = new ContactsAdapter(this, mDm.getDiscoveriesCursor(mCheckin.id));

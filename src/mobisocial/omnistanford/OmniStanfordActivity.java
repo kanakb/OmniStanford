@@ -26,6 +26,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.LinearLayout;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 import mobisocial.omnistanford.db.CheckinManager;
 import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MAccount;
@@ -61,8 +62,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
                     // Single feed
                     Log.d(TAG, "Feed URI: " + feedUri);
                     
-                    DbFeed feed = mMusubi.getFeed(feedUri);
-                    mMusubi.setFeed(feed);
+                    if (mMusubi != null) {
+                        DbFeed feed = mMusubi.getFeed(feedUri);
+                        mMusubi.setFeed(feed);
+                    }
                 }
             }
         }
@@ -96,11 +99,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             
             ((LinearLayout)findViewById(R.id.contentArea)).addView(mButtonView);
             
-            if (!Musubi.isMusubiInstalled(this)) {
-                return;
+            if (Musubi.isMusubiInstalled(this)) {
+                mMusubi = Musubi.getInstance(this);
             }
-            
-            mMusubi = Musubi.getInstance(this);
 
             TextView tv = new TextView(this);
             tv.setTextSize(20.0f);
@@ -123,7 +124,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             showRecent(mButtonView);
             
             // Do some location updates
-            new CreateFeedsTask().execute(App.getDatabaseSource(this));
+            if (Musubi.isMusubiInstalled(this)) {
+                new CreateFeedsTask().execute(App.getDatabaseSource(this));
+            }
             
             bindServices(null);
         }
@@ -133,11 +136,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
     public void onResume() {
         super.onResume();
         
-        if (!Musubi.isMusubiInstalled(this)) {
-            return;
+        if (Musubi.isMusubiInstalled(this)) {
+            new CreateFeedsTask().execute(App.getDatabaseSource(this));
         }
-        
-        new CreateFeedsTask().execute(App.getDatabaseSource(this));
         
         if (mHms == null) {
             mHms = new ArrayList<HashMap<String, String>>();
@@ -182,16 +183,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             }
         }
         constructMap(null);
-        /*HashMap<String, String> hm = new HashMap<String, String>();
-        hm.put("title", "Gates Building");
-        hm.put("subtitle", new Date(0L).toString());
-        hms.add(hm);
-        HashMap<String, String> hm2 = new HashMap<String, String>();
-        hm2.put("title", "Arrillaga");
-        hm2.put("subtitle", new Date(4200L).toString());
-        hms.add(hm2);*/
         
-        // TODO: this should be pull to refresh
         mListView = new PullToRefreshListView(this);
         mListView.setAdapter(new SimpleAdapter(this, mHms, R.layout.plain_list_item, from, to));
         mListView.setOnItemClickListener(new OnItemClickListener() {
@@ -199,6 +191,12 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position,
                     long id) {
                 //do something
+                if (!Musubi.isMusubiInstalled(OmniStanfordActivity.this)) {
+                    Toast.makeText(
+                            OmniStanfordActivity.this, "Musubi not installed!", Toast.LENGTH_SHORT)
+                            .show();
+                    return;
+                }
                 Log.d(TAG, "Selected " + position);
                 Intent intent = new Intent(OmniStanfordActivity.this, SelectContactsActivity.class);
                 if (mIdMap.containsKey(new Long(position))) {
@@ -232,6 +230,10 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             	startActivity(create);
             	return true;
             case R.id.menu_add_account:
+                if (!Musubi.isMusubiInstalled(this)) {
+                    Toast.makeText(this, "Musubi not installed!", Toast.LENGTH_SHORT);
+                    return true;
+                }
             	Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
                 startActivityForResult(picker, REQUEST_PICK_ID);
                 return true;

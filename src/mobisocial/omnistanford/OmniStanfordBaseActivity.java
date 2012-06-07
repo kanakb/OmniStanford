@@ -29,12 +29,12 @@ import android.widget.LinearLayout;
 public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
     public static final String TAG = "OmniStanfordBaseActivity";
     
-    protected static final String ACTION_CREATE_STANFORD_FEED = "musubi.intent.action.CREATE_STANFORD_FEED";
+    protected static final String ACTION_CREATE_STANFORD_FEED = "musubi.intent.action.SILENT_CREATE_FEED";
     protected static final String ACTION_OWNED_ID_PICKER = "musubi.intent.action.OWNED_ID_PICKER";
     protected static final int REQUEST_CREATE_FEED = 1;
     protected static final int REQUEST_PICK_ID = 2;
     protected static final String ACCOUNT_TYPE_STANFORD = "edu.stanford";
-    protected static final String EXTRA_NAME = "mobisocial.omnistanford.json";
+    protected static final String EXTRA_NAME = "mobisocial.musubi.createfeed.json";
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -64,30 +64,10 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                 }
                 
                 Util.setPickedAccount(this, names.get(i), types.get(i), hashes.get(i));
-
                 
-                Intent create = new Intent(ACTION_CREATE_STANFORD_FEED);
-                JSONObject primary = new JSONObject();
-                JSONArray arr = new JSONArray();
-                JSONObject one = new JSONObject();
-                try {
-                    primary.put("visible", true);
-                    one.put("hashed", Base64.encodeToString(digestPrincipal("gates.stanford@gmail.com"), Base64.DEFAULT));
-                    one.put("name", "Steve Fan");
-                    one.put("type", "com.google");
-                    arr.put(0, one);
-                    primary.put("members", arr);
-                    primary.put("sender", types.get(0));
-                } catch (JSONException e) {
-                    Log.e(TAG, "JSON parse error", e);
-                    return;
+                if (Musubi.isMusubiInstalled(this)) {
+                    new CreateFeedsTask().execute(App.getDatabaseSource(this));
                 }
-
-                Log.d(TAG, arr.toString());
-                create.putExtra(EXTRA_NAME, primary.toString());
-                //startActivityForResult(create, REQUEST_CREATE_FEED);
-                
-                new CreateFeedsTask().execute(App.getDatabaseSource(this));
             }
         } else if (requestCode == REQUEST_CREATE_FEED) {
             if (resultCode == RESULT_OK) {
@@ -109,11 +89,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                             loc.feedUri = Uri.parse(array.get(i));
                         	Log.i(TAG, loc.feedUri.toString());
                         	lm.updateLocation(loc);
-
-//                        	Request request = new Request("gates.stanford@gmail.com", "checkin", null);
-//                        	request.addParam("dorm", "Off-Campus");
-//                        	request.addParam("department", "CS");
-//                        	request.send(this);
                         }
                     }
                 }
@@ -128,10 +103,6 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
         
         LinearLayout variableBox = (LinearLayout)findViewById(R.id.contentArea);
         variableBox.removeAllViewsInLayout();
-        
-        if (!Musubi.isMusubiInstalled(this)) {
-            return;
-        }
         
         setActionBar();
     }
@@ -178,7 +149,7 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
             JSONArray outerArr = new JSONArray();
             ArrayList<String> principals = new ArrayList<String>();
             for (MLocation location : locations) {
-                if (location.feedUri == null) {
+                if (location.feedUri == null && !location.principal.equals("")) {
                     JSONObject primary = new JSONObject();
                     JSONArray arr = new JSONArray();
                     JSONObject one = new JSONObject();

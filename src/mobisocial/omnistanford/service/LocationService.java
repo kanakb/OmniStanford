@@ -253,9 +253,7 @@ public class LocationService extends Service {
 			CheckinManager cm = new CheckinManager(App.getDatabaseSource(LocationService.this));
 			MLocation match = mLm.getLocation(mCurrent.getLatitude(), mCurrent.getLongitude());
 			
-			if (match != null && match.feedUri == null) {
-				Log.d(TAG, "match found, no uri set");
-			} else if (match != null && match.feedUri != null) {
+			if (match != null) {
 				Log.d(TAG, "Found " + match.name);
 				MCheckinData data = null;
 				List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
@@ -267,15 +265,19 @@ public class LocationService extends Service {
 					data = new MCheckinData();
 					data.entryTime = System.currentTimeMillis();
 					data.locationId = match.id;
+                    data.accountId = 0L;
+                    
 					MAccount acct = Util.loadAccount(LocationService.this);
 					if (acct != null) {
-						data.accountId = acct.id;
+					    data.accountId = acct.id;
+					}
 
-						// Check in locally
-						cm.insertCheckin(data);
-						Log.d(TAG, "inserted with id " + data.id + " at " + data.entryTime);
+					// Check in locally
+					cm.insertCheckin(data);
+					Log.d(TAG, "inserted with id " + data.id + " at " + data.entryTime);
 
-						// Check in remotely
+					// Check in remotely
+					if (match.feedUri != null) {
 						PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
 						Request request = new Request(match.principal, "checkin", mResponseHandler);
 						request.addParam("id", new Long(data.id).toString());
@@ -301,28 +303,30 @@ public class LocationService extends Service {
 					}
 				} else {
 					// Only check in remotely
-					PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
-					Request request = new Request(match.principal, "checkin", mResponseHandler);
-					request.addParam("id", new Long(data.id).toString());
-					MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
-					if (dorm != null) {
-						request.addParam(SettingsActivity.RESIDENCE, dorm.value);
-					}
-					MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
-					if (department != null) {
-						request.addParam(SettingsActivity.DEPARTMENT, department.value);
-					}
-					MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
-					if (enabled != null) {
-						boolean shouldSend = "true".equals(enabled.value) ? true : false;
-						if (shouldSend) {
-							long now = System.currentTimeMillis();
-							if (now - MINUTE > mLastRequest) {
-								mLastRequest = now;
-								request.send(LocationService.this);
-							}
-						}
-					}
+				    if (match.feedUri != null) {
+    					PropertiesManager pm = new PropertiesManager(App.getDatabaseSource(LocationService.this));
+    					Request request = new Request(match.principal, "checkin", mResponseHandler);
+    					request.addParam("id", new Long(data.id).toString());
+    					MUserProperty dorm = pm.getProperty(SettingsActivity.RESIDENCE);
+    					if (dorm != null) {
+    						request.addParam(SettingsActivity.RESIDENCE, dorm.value);
+    					}
+    					MUserProperty department = pm.getProperty(SettingsActivity.DEPARTMENT);
+    					if (department != null) {
+    						request.addParam(SettingsActivity.DEPARTMENT, department.value);
+    					}
+    					MUserProperty enabled = pm.getProperty(SettingsActivity.ENABLED);
+    					if (enabled != null) {
+    						boolean shouldSend = "true".equals(enabled.value) ? true : false;
+    						if (shouldSend) {
+    							long now = System.currentTimeMillis();
+    							if (now - MINUTE > mLastRequest) {
+    								mLastRequest = now;
+    								request.send(LocationService.this);
+    							}
+    						}
+    					}
+				    }
 				}
 			}
 			
@@ -347,12 +351,15 @@ public class LocationService extends Service {
     					for (MCheckinData data : checkins) {
     						if (data.exitTime == null || data.exitTime == 0) {
     							MLocation loc = mLm.getLocation(data.locationId);
-    							if(isAtDifferentLocation && loc.id == match.id) {
+    							if (isAtDifferentLocation && loc.id == match.id) {
     								continue;
     							}
                                 data.exitTime = System.currentTimeMillis();
                                 Log.d(TAG, "exiting id " + data.id + " " + loc.name);
-    							cm.updateCheckin(data);
+                                cm.updateCheckin(data);
+    							if (match.feedUri == null) {
+    							    continue;
+    							}
     							Request request = new Request(loc.principal, "checkout", null);
     							request.send(LocationService.this);
     						}
