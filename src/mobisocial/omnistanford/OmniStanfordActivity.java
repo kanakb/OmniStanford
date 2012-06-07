@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -231,15 +232,19 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             	return true;
             case R.id.menu_add_account:
                 if (!Musubi.isMusubiInstalled(this)) {
-                    Toast.makeText(this, "Musubi not installed!", Toast.LENGTH_SHORT);
+                    Toast.makeText(this, "Musubi not installed!", Toast.LENGTH_SHORT).show();
                     return true;
                 }
             	Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
                 startActivityForResult(picker, REQUEST_PICK_ID);
                 return true;
             case R.id.menu_schedule:
-            	Intent intent = new Intent(OmniStanfordActivity.this, ScheduleActivity.class);
-				startActivity(intent);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                	Intent intent = new Intent(OmniStanfordActivity.this, ScheduleActivity.class);
+    				startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Android 3.0+ required!", Toast.LENGTH_SHORT).show();
+                }
 				return true;
             default:
                 return super.onOptionsItemSelected(item);
