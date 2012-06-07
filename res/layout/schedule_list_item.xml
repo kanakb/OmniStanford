@@ -12,16 +12,29 @@
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
         android:paddingTop="8dp"
-        android:singleLine="true"
         android:textColor="?android:attr/textColorPrimary"
         android:textSize="16sp"
         android:textStyle="bold" />
     
-    <LinearLayout
+     <TextView
         android:id="@+id/scheduleSubtitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/scheduleTitle"
+        android:layout_alignParentLeft="true"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="8dp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp" />
+    
+    
+    <LinearLayout
+        android:id="@+id/scheduleContent"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/scheduleTitle"
         android:orientation="horizontal" />
-    
+
+   
 </mobisocial.omnistanford.ScheduleItemLayout>

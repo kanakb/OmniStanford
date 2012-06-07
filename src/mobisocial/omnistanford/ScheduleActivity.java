@@ -1,10 +1,10 @@
 package mobisocial.omnistanford;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 
 import com.actionbarsherlock.view.Menu;
@@ -150,8 +150,8 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 
 		 @Override
 		 public CharSequence getPageTitle (int position) {
-			 return mCalendar.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US)
-			 	+ " " + (position + 1);
+			 SimpleDateFormat formatter = new SimpleDateFormat("E, MMM ");
+			 return formatter.format(mCalendar.getTime()) + (position + 1);
 		 }
 		 
 		 @Override
@@ -206,8 +206,7 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 			 mContainer = (LinearLayout)inflater.inflate(R.layout.schedule_page, container, false);
 			 
 			 // set up schedule listview
-			 mListView = new ListView(this.getActivity());
-			 ((LinearLayout) mContainer.findViewById(R.id.scheduleArea)).addView(mListView);
+			 mListView = (ListView) mContainer.findViewById(R.id.scheduleList);
 			 
 			 // set up tags area
 			 final GridLayout tagsList = (GridLayout) mContainer.findViewById(R.id.tagListArea);
@@ -239,8 +238,8 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 			 mWidth = getActivity().getWindowManager().getDefaultDisplay().getWidth();
 			 
 			 // fill schedule list adapter
-			 String[] from = new String[] { "title", "tags" };
-			 int[] to = new int[] { R.id.scheduleTitle, R.id.scheduleSubtitle };
+			 String[] from = new String[] { "title", "subtitle", "tags" };
+			 int[] to = new int[] { R.id.scheduleTitle, R.id.scheduleSubtitle, R.id.scheduleContent };
 			 if (mHms == null) {
 				 mHms = new ArrayList<HashMap<String, List<Object>>>();
 			 }
@@ -314,12 +313,12 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 				 List<Object> title = new ArrayList<Object>();
 				 title.add(entry);
 				 List<MTag> tags = tm.getTags(entry.checkinId);
-				 Log.i(TAG, entry.checkinId + " month:" + mMonth + " day:" + mDay);
 				 List<Object> tagsCasted = new ArrayList<Object>();
 				 for(MTag t : tags) {
 					 tagsCasted.add(t);
 				 }
 				 hm.put("title", title);
+				 hm.put("subtitle", title);
 				 hm.put("tags", tagsCasted);
 				 mHms.add(hm);
 			 }
@@ -399,15 +398,12 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 			 @Override
 			 public boolean setViewValue(View view, Object data,
 					 String textRepresentation) {
-				 if(view.getId() == R.id.scheduleSubtitle) {
+				 if(view.getId() == R.id.scheduleContent) {
 					 @SuppressWarnings("unchecked")
-					List<Object> tags = (List<Object>) data;
+					 List<Object> tags = (List<Object>) data;
 					 if(tags.size() > 0) {
 						 LinearLayout layout = (LinearLayout) view;
 						 int childCount = layout.getChildCount();
-						 if(tags.size() == 4) {
-							 Log.i(TAG, "here");
-						 }
 						 int width = mWidth / tags.size();
 						 for(int i = 0; i < tags.size(); i++) {
 							 if(i < childCount) {
@@ -425,18 +421,27 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 					 StringBuilder text = new StringBuilder();
 					 @SuppressWarnings("unchecked")
 					 TimeSlot slot = (TimeSlot) ((List<Object>) data).get(0);
+					 text.append(slot.locationName).append("\n");
+					 ((TextView) view).setText(text.toString());
+					 
+					 return true;
+				 } else if(view.getId() == R.id.scheduleSubtitle) {
+					 StringBuilder text = new StringBuilder();
+					 @SuppressWarnings("unchecked")
+					 TimeSlot slot = (TimeSlot) ((List<Object>) data).get(0);
 					 Calendar start = Calendar.getInstance();
 					 start.setTimeInMillis(slot.start);
-					 text.append(slot.locationName + " " + start.get(Calendar.HOUR_OF_DAY));
-					 if(slot.end != null) {
+					 SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, h:mm a");
+					 text.append(formatter.format(start.getTime())).append(" - ");
+					 if(slot.end != null && slot.end != 0L) {
 						 Calendar end = Calendar.getInstance();
 						 end.setTimeInMillis(slot.end);
-						 text.append(" - " + end.get(Calendar.HOUR_OF_DAY));
-						 if(start.get(Calendar.HOUR_OF_DAY) == 21 && end.get(Calendar.HOUR_OF_DAY) == 12) {
-							 Log.i(TAG, "something wrong");
-						 }
+						 text.append(formatter.format(end.getTime()));
+					 } else {
+						 text.append("now");
 					 }
 					 ((TextView) view).setText(text.toString());
+					 
 					 return true;
 				 }
 
