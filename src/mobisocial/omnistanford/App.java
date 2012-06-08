@@ -12,7 +12,7 @@ public class App extends Application {
 	
 	private SQLiteOpenHelper mDatabaseSource;
 	private SQLiteOpenHelper mServerDBSource;
-	private boolean mServerMode = false;
+	private boolean mServerMode = true;
 	
 	public synchronized SQLiteOpenHelper getDatabaseSource() {
 	    if (mDatabaseSource == null) {

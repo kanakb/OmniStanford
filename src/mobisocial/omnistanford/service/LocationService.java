@@ -34,6 +34,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 
 public class LocationService extends Service {
@@ -75,6 +76,13 @@ public class LocationService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "received start id " + startId + ": " + intent);
+		
+		// TODO: virtualbox server has no location provider, need a work around
+		if(((App) getApplicationContext()).getServerMode()) {
+			stopSelf();
+			return START_NOT_STICKY;
+		}
+		
 		if(intent != null) {
 			if(intent.hasExtra("location")) {
 				Location loc = intent.getParcelableExtra("location");
@@ -184,9 +192,9 @@ public class LocationService extends Service {
 	    } else {
             mLocationManager.removeUpdates(mLocationListener);
             mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                    MIN_TIME_SHORT, MIN_DISTANCE, mLocationListener, getMainLooper());
+                    MIN_TIME_LONG, MIN_DISTANCE * 5, mLocationListener, getMainLooper());
             mLocationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
-                    MIN_TIME_LONG, MIN_DISTANCE, mLocationListener);
+                    MIN_TIME_LONG, MIN_DISTANCE * 5, mLocationListener);
 	    }
 	}
 	
