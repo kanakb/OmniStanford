@@ -39,12 +39,18 @@ public class MLocation {
     public static final String COL_FEED_URI = "feed_uri";
     
     /**
-     * Bounding box for location (optional)
+     * Bounding box for the location (optional)
      */
     public static final String COL_MIN_LAT = "min_latitude";
     public static final String COL_MAX_LAT = "max_latitude";
     public static final String COL_MIN_LON = "min_longitude";
     public static final String COL_MAX_LON = "max_longitude";
+    
+    /**
+     * Image data for the location (optional)
+     */
+    public static final String COL_IMAGE_URL = "image_url";
+    public static final String COL_IMAGE = "image";
     
     public long id;
     public String name;
@@ -56,4 +62,6 @@ public class MLocation {
     public Double minLongitude;
     public Double maxLongitude;
     public Uri feedUri;
+    public String imageUrl;
+    public byte[] image;
 }

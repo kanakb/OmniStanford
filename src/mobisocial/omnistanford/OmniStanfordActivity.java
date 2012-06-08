@@ -13,6 +13,8 @@ import com.actionbarsherlock.view.MenuItem;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -30,6 +32,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -62,6 +65,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
     private CursorAdapter mCursorAdapter;
     private CheckinManager mCm;
     private Loader<Cursor> mLoader;
+    private HashMap<Long, Bitmap> mBitmapCache;
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -100,6 +104,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
             mButtonView.setOrientation(LinearLayout.VERTICAL);
             
             mIdMap = new HashMap<Long, Long>();
+            mBitmapCache = new HashMap<Long, Bitmap>();
             
             mCm = new CheckinManager(App.getDatabaseSource(this));
             
@@ -311,7 +316,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
     class RefreshListTask extends AsyncTask<Long, Void, Long> {
         @Override
         protected Long doInBackground(Long... params) {
-            constructMap(mCm.getRecentCheckins(MONTH));
+            if (mCm != null) {
+                constructMap(mCm.getRecentCheckins(MONTH));
+            }
             return params[0];
         }
         
@@ -336,6 +343,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
         public TextView titleView;
         public TextView subtitleView;
         public TextView subtitle2View;
+        public ImageView imageView;
     }
     
     private class CheckinsAdapter extends CursorAdapter {
@@ -374,6 +382,18 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
                 holder.subtitle2View.setText(
                         "Left at " + fullFormatter.format(new Date(checkin.exitTime)));
             }
+            
+            if (where.image != null && where.image.length > 0) {
+                if (mBitmapCache.containsKey(where.id)) {
+                    holder.imageView.setImageBitmap(mBitmapCache.get(where.id));
+                } else {
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(where.image, 0, where.image.length);
+                    mBitmapCache.put(where.id, bitmap);
+                    holder.imageView.setImageBitmap(bitmap);
+                }
+            } else {
+                holder.imageView.setImageResource(R.drawable.stanford);
+            }
         }
         
         @Override
@@ -383,6 +403,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
             holder.titleView = (TextView)v.findViewById(R.id.plainTitle);
             holder.subtitleView = (TextView)v.findViewById(R.id.plainSubtitle);
             holder.subtitle2View = (TextView)v.findViewById(R.id.plainSubtitle2);
+            holder.imageView = (ImageView)v.findViewById(R.id.locationImage);
             v.setTag(holder);
             return v;
         }
@@ -409,6 +430,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Log.d(TAG, "onCreateLoader");
         mLoader = new CheckinCursorLoader(this, mCm, MONTH);
+        mBitmapCache.clear();
         return mLoader;
     }
 
@@ -420,6 +442,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
             Log.d(TAG, "replaced cursor");
             oldCursor.close();
         }
+        mBitmapCache.clear();
     }
 
     @Override
@@ -429,5 +452,6 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
         if (oldCursor != null && !oldCursor.isClosed()) {
             oldCursor.close();
         }
+        mBitmapCache.clear();
     }
 }

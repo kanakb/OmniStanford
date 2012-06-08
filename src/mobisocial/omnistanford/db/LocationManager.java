@@ -22,6 +22,8 @@ public class LocationManager extends ManagerBase {
     private static final int minLon = 7;
     private static final int maxLon = 8;
     private static final int feedUri = 9;
+    private static final int imageUrl = 10;
+    private static final int image = 11;
     
     private static final String[] STANDARD_FIELDS = new String[] {
         MLocation.COL_ID,
@@ -33,7 +35,9 @@ public class LocationManager extends ManagerBase {
         MLocation.COL_MAX_LAT,
         MLocation.COL_MIN_LON,
         MLocation.COL_MAX_LON,
-        MLocation.COL_FEED_URI
+        MLocation.COL_FEED_URI,
+        MLocation.COL_IMAGE_URL,
+        MLocation.COL_IMAGE
     };
 
     private SQLiteStatement mUpdateLocation;
@@ -61,7 +65,9 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_MAX_LAT).append(",")
                     .append(MLocation.COL_MIN_LON).append(",")
                     .append(MLocation.COL_MAX_LON).append(",")
-                    .append(MLocation.COL_FEED_URI)
+                    .append(MLocation.COL_FEED_URI).append(",")
+                    .append(MLocation.COL_IMAGE_URL).append(",")
+                    .append(MLocation.COL_IMAGE)
                     .append(") VALUES (?,?,?,?,?,?,?,?,?)");
                 mInsertLocation = db.compileStatement(sql.toString());
             }
@@ -81,6 +87,8 @@ public class LocationManager extends ManagerBase {
             } else {
                 bindField(mInsertLocation, feedUri, location.feedUri.toString());
             }
+            bindField(mInsertLocation, imageUrl, location.imageUrl);
+            bindField(mInsertLocation, image, location.image);
             location.id = mInsertLocation.executeInsert();
         }
     }
@@ -100,28 +108,32 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_MAX_LAT).append("=?,")
                     .append(MLocation.COL_MIN_LON).append("=?,")
                     .append(MLocation.COL_MAX_LON).append("=?,")
-                    .append(MLocation.COL_FEED_URI).append("=?")
+                    .append(MLocation.COL_FEED_URI).append("=?,")
+                    .append(MLocation.COL_IMAGE_URL).append("=?,")
+                    .append(MLocation.COL_IMAGE).append("=?")
                     .append(" WHERE ").append(MLocation.COL_ID).append("=?");
                 mUpdateLocation = db.compileStatement(sql.toString());
             }
+        }
             
-            synchronized(mUpdateLocation) {
-                bindField(mUpdateLocation, name, location.name);
-                bindField(mUpdateLocation, principal, location.principal);
-                bindField(mUpdateLocation, accountType, location.accountType);
-                bindField(mUpdateLocation, type, location.type);
-                bindField(mUpdateLocation, minLat, location.minLatitude);
-                bindField(mUpdateLocation, maxLat, location.maxLatitude);
-                bindField(mUpdateLocation, minLon, location.minLongitude);
-                bindField(mUpdateLocation, maxLon, location.maxLongitude);
-                if (location.feedUri == null) {
-                    bindField(mUpdateLocation, feedUri, null);
-                } else {
-                    bindField(mUpdateLocation, feedUri, location.feedUri.toString());
-                }
-                bindField(mUpdateLocation, 10, location.id);
-                mUpdateLocation.execute();
+        synchronized(mUpdateLocation) {
+            bindField(mUpdateLocation, name, location.name);
+            bindField(mUpdateLocation, principal, location.principal);
+            bindField(mUpdateLocation, accountType, location.accountType);
+            bindField(mUpdateLocation, type, location.type);
+            bindField(mUpdateLocation, minLat, location.minLatitude);
+            bindField(mUpdateLocation, maxLat, location.maxLatitude);
+            bindField(mUpdateLocation, minLon, location.minLongitude);
+            bindField(mUpdateLocation, maxLon, location.maxLongitude);
+            if (location.feedUri == null) {
+                bindField(mUpdateLocation, feedUri, null);
+            } else {
+                bindField(mUpdateLocation, feedUri, location.feedUri.toString());
             }
+            bindField(mUpdateLocation, imageUrl, location.imageUrl);
+            bindField(mUpdateLocation, image, location.image);
+            bindField(mUpdateLocation, 12, location.id);
+            mUpdateLocation.execute();
         }
     }
     
@@ -131,6 +143,12 @@ public class LocationManager extends ManagerBase {
             location.id = existing.id;
             if (location.feedUri == null) {
                 location.feedUri = existing.feedUri;
+            }
+            if (location.imageUrl == null) {
+                location.imageUrl = existing.imageUrl;
+            }
+            if (location.image == null) {
+                location.image = existing.image;
             }
             updateLocation(location);
         } else {
@@ -267,6 +285,8 @@ public class LocationManager extends ManagerBase {
         } else {
             loc.feedUri = null;
         }
+        loc.imageUrl = c.getString(imageUrl);
+        loc.image = c.getBlob(image);
         return loc;
     }
 }

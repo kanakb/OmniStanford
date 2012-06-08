@@ -1,13 +1,18 @@
 package mobisocial.omnistanford.util;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.ByteArrayBuffer;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,6 +24,8 @@ import mobisocial.omnistanford.db.MLocation;
 
 public class LocationUpdater {
     public static final String TAG = "LocationUpdater";
+    
+    private static final int CHUNK_SIZE = 512;
     
     private static final String ENDPOINT =
             "https://musulogin.appspot.com/static/stanford_locations.json";
@@ -59,6 +66,10 @@ public class LocationUpdater {
                 if (loc.principal != null && !loc.principal.equals("null")) {
                     Log.d(TAG, "principal: " + loc.principal);
                     mLm.ensureLocation(loc);
+                    if (obj.has("image")) {
+                        // do an image update if needed
+                        updateImage(loc, obj.getString("image"));
+                    }
                 }
             } catch (JSONException e) {
                 Log.e(TAG, "Error parsing JSON object");
@@ -74,6 +85,46 @@ public class LocationUpdater {
         temp.minLongitude = -122.02596;
         temp.maxLongitude = -122.01925;
         mLm.ensureLocation(temp);
+    }
+    
+    private void updateImage(MLocation loc, String imageUrl) {
+        // No need to update if the image URL hasn't changed
+        if (loc.imageUrl != null && imageUrl.equals(loc.imageUrl)) {
+            return;
+        }
+        
+        loc.imageUrl = imageUrl;
+        Log.d(TAG, "getting image for " + loc.name + " at " + loc.imageUrl);
+        
+        byte[] imageData = imageDataRequest(imageUrl);
+        if (imageData != null) {
+            Log.d(TAG, "image not null, size " + imageData.length + " adding to location " + loc.id);
+            loc.image = imageData;
+            mLm.updateLocation(loc);
+        }
+    }
+    
+    private byte[] imageDataRequest(String remoteUrl) {
+        try {
+            // Grab the content
+            URL url = new URL(remoteUrl);
+            URLConnection ucon = url.openConnection();
+            InputStream is = ucon.getInputStream();
+            
+            // Read the content chunk by chunk
+            BufferedInputStream bis = new BufferedInputStream(is, 8192);
+            ByteArrayBuffer baf = new ByteArrayBuffer(0);
+            byte[] chunk = new byte[CHUNK_SIZE];
+            int current = bis.read(chunk);
+            while (current != -1) {
+                baf.append(chunk, 0, current);
+                current = bis.read(chunk);
+            }
+            return baf.toByteArray();
+        } catch (IOException e) {
+            Log.e(TAG, "HTTP error", e);
+        }
+        return null;
     }
     
     private static JSONArray sendRequest() {

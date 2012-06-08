@@ -9,7 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TAG = "DatabaseHelper";
     
     private static final String DB_NAME = "OmniStanford.db";
-    private static final int VERSION = 6;
+    private static final int VERSION = 7;
     
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
@@ -52,7 +52,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 MLocation.COL_MAX_LAT, "REAL",
                 MLocation.COL_MIN_LON, "REAL",
                 MLocation.COL_MAX_LON, "REAL",
-                MLocation.COL_FEED_URI, "TEXT");
+                MLocation.COL_FEED_URI, "TEXT",
+                MLocation.COL_IMAGE_URL, "TEXT",
+                MLocation.COL_IMAGE, "BLOB");
         
         createTable(db, MUserProperty.TABLE,
                 MUserProperty.COL_ID, "INTEGER PRIMARY KEY",
@@ -149,6 +151,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("CREATE INDEX " + MDiscoveredPerson.TABLE + "_user_lookup ON " + 
                     MDiscoveredPerson.TABLE + "(" + MDiscoveredPerson.COL_IDENTIFIER + "," +
                     MDiscoveredPerson.COL_ACCOUNT_TYPE + ")");
+        }
+        if (oldVersion <= 6) {
+            db.execSQL("ALTER TABLE " + MLocation.TABLE +
+                    " ADD COLUMN " + MLocation.COL_IMAGE_URL + " TEXT;");
+            db.execSQL("ALTER TABLE " + MLocation.TABLE +
+                    " ADD COLUMN " + MLocation.COL_IMAGE + " BLOB;");
         }
         db.setVersion(VERSION);
     }

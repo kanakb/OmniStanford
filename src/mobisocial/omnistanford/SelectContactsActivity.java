@@ -33,6 +33,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
@@ -45,6 +48,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CheckedTextView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -189,6 +193,23 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity
         }
         
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
+
+        LocationManager lm = new LocationManager(App.getDatabaseSource(this));
+        MLocation where = lm.getLocation(mCheckin.locationId);
+        TextView tv = new TextView(this);
+        tv.setTextSize(20.0f);
+        tv.setTextColor(Color.WHITE);
+        tv.setText(where.name);
+        wrapper.addView(tv);
+        
+        // Show an image if one exists
+        if (where.image != null && where.image.length > 0) {
+            ImageView image = new ImageView(this);
+            Bitmap bm = BitmapFactory.decodeByteArray(where.image, 0, where.image.length);
+            image.setImageBitmap(bm);
+            wrapper.addView(image);
+        }
+        
         getSupportLoaderManager().initLoader(DISCOVERY_LOADER, null, this);
         mCursorAdapter = new ContactsAdapter(
                 this, null, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
