@@ -38,7 +38,6 @@ import android.util.Log;
 
 public class LocationService extends Service {
 	public static final String TAG = "LocationService";
-	
 
 	public static final long MINUTE = 1000L * 60L;
 	public static final long DAY = MINUTE * 60L * 24L; 
@@ -259,10 +258,20 @@ public class LocationService extends Service {
 			if (match != null) {
 				Log.d(TAG, "Found " + match.name);
 				MCheckinData data = null;
-				List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH);
+				List<MCheckinData> possible = cm.getRecentOpenCheckins(MONTH, match.id);
 				if (possible.size() > 0) {
 				    data = possible.get(0);
 				}
+				
+				// If there was a recent checkout, merge it to avoid duplicating
+				if (data == null) {
+				    data = cm.getLastCheckinByExit(MIN_TIME_SHORT, match.id);
+				    if (data != null && data.exitTime != null && data.exitTime != 0L) {
+				        data.exitTime = null;
+				        cm.updateCheckin(data);
+				    }
+				}
+				
 				// Only update if no recent checkins, or already checked out
 				if (data == null) {
 					data = new MCheckinData();
@@ -360,7 +369,7 @@ public class LocationService extends Service {
                                 data.exitTime = System.currentTimeMillis();
                                 Log.d(TAG, "exiting id " + data.id + " " + loc.name);
                                 cm.updateCheckin(data);
-    							if (match.feedUri == null) {
+    							if (match != null && match.feedUri == null) {
     							    continue;
     							}
     							Request request = new Request(loc.principal, "checkout", null);

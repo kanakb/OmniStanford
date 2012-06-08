@@ -21,6 +21,7 @@ import mobisocial.omnistanford.db.MDiscovery;
 import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.db.MUserProperty;
 import mobisocial.omnistanford.db.PropertiesManager;
+import mobisocial.omnistanford.db.SimpleCursorLoader;
 import mobisocial.omnistanford.ui.PullToRefreshListView;
 import mobisocial.omnistanford.ui.PullToRefreshListView.OnRefreshListener;
 import mobisocial.omnistanford.util.Request;
@@ -34,6 +35,9 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,13 +45,13 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CheckedTextView;
-import android.widget.CursorAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class SelectContactsActivity extends OmniStanfordBaseActivity {
+public class SelectContactsActivity extends OmniStanfordBaseActivity
+        implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String TAG = "SelectContactsActivity";
     
     private static final String ACCOUNT_TYPE_STANFORD = "edu.stanford";
@@ -60,6 +64,8 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     private static final String FAMILIAR_FACEBOOK = "Facebook Account";
     private static final String FAMILIAR_PHONE = "Phone Account";
     
+    private static final int DISCOVERY_LOADER = 0x02;
+    
     private PullToRefreshListView mListView;
     private CursorAdapter mCursorAdapter;
     private CheckinManager mCm;
@@ -69,6 +75,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     private DiscoveryManager mDm;
     private HashMap<Long, Long> mPersonMap;
     private HashMap<String, String> mProviderMap;
+    private Loader<Cursor> mLoader;
     
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -182,8 +189,9 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         }
         
         LinearLayout wrapper = (LinearLayout)findViewById(R.id.contentArea);
-        mCursorAdapter = new ContactsAdapter(this, mDm.getDiscoveriesCursor(mCheckin.id));
-        alternateUpdate();
+        getSupportLoaderManager().initLoader(DISCOVERY_LOADER, null, this);
+        mCursorAdapter = new ContactsAdapter(
+                this, null, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
         
         mListView = new PullToRefreshListView(this);
         mListView.setAdapter(mCursorAdapter);
@@ -221,16 +229,15 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
     
     @Override
     public void onResume() {
-    	alternateUpdate();
     	super.onResume();
+        updateCursor();
     }
     
-    private void alternateUpdate() {
-        Cursor c = mDm.getDiscoveriesCursor(mCheckin.id);
-        if (c != null) {
-            startManagingCursor(c);
+    private void updateCursor() {
+        if (mLoader != null && mLoader.isStarted()) {
+            Log.d(TAG, "updating cursor");
+            mLoader.forceLoad();
         }
-        mCursorAdapter.changeCursor(c);
     }
 
     class GetDataTask extends AsyncTask<Long, Void, Boolean> {
@@ -271,6 +278,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
 		@Override
 		protected void onPostExecute(Boolean status) {
 		    if (status) {
+		        updateCursor();
 		        mListView.onRefreshComplete();
 		    }
 		}
@@ -322,7 +330,7 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    alternateUpdate();
+                    updateCursor();
                     mListView.onRefreshComplete();
                 }
             });
@@ -350,8 +358,8 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
         private DiscoveredPersonManager mDpm;
         private PropertiesManager mPm;
         
-        public ContactsAdapter(Context context, Cursor c) {
-            super(context, c);
+        public ContactsAdapter(Context context, Cursor c, int flags) {
+            super(context, c, flags);
             mDpm = new DiscoveredPersonManager(
                     App.getDatabaseSource(SelectContactsActivity.this));
             mPm = new PropertiesManager(
@@ -436,6 +444,48 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity {
             dh.subtitleView = (TextView) v.findViewById(R.id.subtitle);
             v.setTag(dh);
             return v;
+        }
+    }
+    
+    private static class DiscoveryCursorLoader extends SimpleCursorLoader {
+        private DiscoveryManager mDm;
+        private long mCheckinId;
+        
+        public DiscoveryCursorLoader(Context context, DiscoveryManager dm, long checkinId) {
+            super(context);
+            mDm = dm;
+            mCheckinId = checkinId;
+        }
+        
+        @Override
+        public Cursor loadInBackground() {
+            return mDm.getDiscoveriesCursor(mCheckinId);
+        }
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.d(TAG, "onCreateLoader");
+        mLoader = new DiscoveryCursorLoader(this, mDm, mCheckin.id);
+        return mLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.d(TAG, "onLoadFinished");
+        Cursor oldCursor = mCursorAdapter.swapCursor(cursor);
+        if (oldCursor != null && oldCursor != cursor && !oldCursor.isClosed()) {
+            Log.d(TAG, "replaced cursor");
+            oldCursor.close();
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        Log.d(TAG, "onLoaderReset");
+        Cursor oldCursor = mCursorAdapter.swapCursor(null);
+        if (oldCursor != null && !oldCursor.isClosed()) {
+            oldCursor.close();
         }
     }
 }

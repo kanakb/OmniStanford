@@ -117,5 +117,6 @@
 		<item>Wilbur Hall</item>
     </string-array>
     <string name="start_feed">Start Something</string>
+    <string name="location_image">Location Image</string>
 
 </resources>

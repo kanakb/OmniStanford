@@ -2,7 +2,6 @@ package mobisocial.omnistanford;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +10,9 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -19,13 +20,17 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.CursorAdapter;
 import android.util.Base64;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.LinearLayout;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import mobisocial.omnistanford.db.CheckinManager;
@@ -33,6 +38,7 @@ import mobisocial.omnistanford.db.LocationManager;
 import mobisocial.omnistanford.db.MAccount;
 import mobisocial.omnistanford.db.MCheckinData;
 import mobisocial.omnistanford.db.MLocation;
+import mobisocial.omnistanford.db.SimpleCursorLoader;
 import mobisocial.omnistanford.server.ui.CheckinListFragment;
 import mobisocial.omnistanford.service.LocationService;
 import mobisocial.omnistanford.ui.PullToRefreshListView;
@@ -41,16 +47,21 @@ import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbFeed;
 import mobisocial.socialkit.musubi.Musubi;
 
-public class OmniStanfordActivity extends OmniStanfordBaseActivity {
+public class OmniStanfordActivity extends OmniStanfordBaseActivity
+        implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String TAG = "OmniStanfordActivity";
     
     public static final long MONTH = 1000L * 60L * 60L * 24L * 30L;
     
+    private static final int CHECKIN_CURSOR_LOADER = 0x01;
+    
     private Musubi mMusubi;
     private LinearLayout mButtonView;
-    private List<HashMap<String, String>> mHms;
     private HashMap<Long, Long> mIdMap;
     private PullToRefreshListView mListView;
+    private CursorAdapter mCursorAdapter;
+    private CheckinManager mCm;
+    private Loader<Cursor> mLoader;
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -88,6 +99,20 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             mButtonView = new LinearLayout(this);
             mButtonView.setOrientation(LinearLayout.VERTICAL);
             
+            mIdMap = new HashMap<Long, Long>();
+            
+            mCm = new CheckinManager(App.getDatabaseSource(this));
+            
+            getSupportLoaderManager().initLoader(CHECKIN_CURSOR_LOADER, null, this);
+            new Thread() {
+                @Override
+                public void run() {
+                    constructMap(mCm.getRecentCheckins(MONTH));
+                }
+            };
+            mCursorAdapter = new CheckinsAdapter(
+                    this, null, CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+            
 //            Button checkinButton = new Button(this);
 //            checkinButton.setText("Checkin");
 //            checkinButton.setOnClickListener(mCheckinClickListener);
@@ -108,8 +133,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
             tv.setTextSize(20.0f);
             tv.setTextColor(Color.WHITE);
             tv.setText("Recent Locations");
-            CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-            List<MCheckinData> checkins = cm.getRecentCheckins();
+            List<MCheckinData> checkins = mCm.getRecentCheckins();
             for (MCheckinData data : checkins) {
                 if (data.exitTime == null) {
                     LocationManager lm = new LocationManager(App.getDatabaseSource(this));
@@ -140,53 +164,20 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         if (Musubi.isMusubiInstalled(this)) {
             new CreateFeedsTask().execute(App.getDatabaseSource(this));
         }
-        
-        if (mHms == null) {
-            mHms = new ArrayList<HashMap<String, String>>();
-        }
-        constructMap(null);
+        new RefreshListTask().execute(0L);
     }
     
     private void constructMap(List<MCheckinData> checkins) {
-        synchronized(this) {
-            mHms.clear();
-            LocationManager lm = new LocationManager(App.getDatabaseSource(this));
-            if (checkins == null) {
-                CheckinManager cm = new CheckinManager(App.getDatabaseSource(this));
-                checkins = cm.getRecentCheckins(MONTH);
-            }
-            mIdMap = new HashMap<Long, Long>();
+        synchronized(mIdMap) {
             for (MCheckinData checkin : checkins) {
-                HashMap<String, String> hm = new HashMap<String, String>();
-                MLocation loc = lm.getLocation(checkin.locationId);
-                Format fullFormatter = new SimpleDateFormat("M/d/yyyy h:mm a");
-                hm.put("title", loc.name);
-                if (checkin.exitTime == null || checkin.exitTime == 0L) {
-                    hm.put("subtitle2", "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
-                    hm.put("subtitle", "You are currently here.");
-                } else {
-                    hm.put("subtitle", "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
-                    hm.put("subtitle2", "Left at " + fullFormatter.format(new Date(checkin.exitTime)));
-                } 
-                mHms.add(hm);
-                mIdMap.put(new Long(mHms.size()), checkin.id);
+                mIdMap.put(new Long(mIdMap.size() + 1), checkin.id);
             }
         }
     }
     
-    
     private void showRecent(LinearLayout wrapper) {
-        String[] from = new String[] { "title", "subtitle", "subtitle2" };
-        int[] to = new int[] { R.id.plainTitle, R.id.plainSubtitle, R.id.plainSubtitle2 };
-        synchronized(this) {
-            if (mHms == null) {
-                mHms = new ArrayList<HashMap<String, String>>();
-            }
-        }
-        constructMap(null);
-        
         mListView = new PullToRefreshListView(this);
-        mListView.setAdapter(new SimpleAdapter(this, mHms, R.layout.plain_list_item, from, to));
+        mListView.setAdapter(mCursorAdapter);
         mListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position,
@@ -317,18 +308,126 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity {
         return false;
     }
     
-    class RefreshListTask extends AsyncTask<Long, Void, List<MCheckinData>> {
+    class RefreshListTask extends AsyncTask<Long, Void, Long> {
         @Override
-        protected List<MCheckinData> doInBackground(Long... params) {
-            CheckinManager cm = new CheckinManager(
-                    App.getDatabaseSource(OmniStanfordActivity.this));
-            return cm.getRecentCheckins(MONTH);
+        protected Long doInBackground(Long... params) {
+            constructMap(mCm.getRecentCheckins(MONTH));
+            return params[0];
         }
         
         @Override
-        protected void onPostExecute(List<MCheckinData> data) {
-            constructMap(data);
-            mListView.onRefreshComplete();
+        protected void onPostExecute(Long data) {
+            updateCursor();
+            
+            if (data == 1L) {
+                mListView.onRefreshComplete();
+            }
+        }
+    }
+    
+    private void updateCursor() {
+        if (mLoader != null && mLoader.isStarted()) {
+            Log.d(TAG, "updating cursor");
+            mLoader.forceLoad();
+        }
+    }
+    
+    private static class CheckinHolder {
+        public TextView titleView;
+        public TextView subtitleView;
+        public TextView subtitle2View;
+    }
+    
+    private class CheckinsAdapter extends CursorAdapter {
+        private LocationManager mLm;
+        
+        public CheckinsAdapter(Context context, Cursor c, int flags) {
+            super(context, c, flags);
+            mLm = new LocationManager(App.getDatabaseSource(OmniStanfordActivity.this));
+        }
+        
+        @Override
+        public void changeCursor(Cursor c) {
+            Log.d(TAG, "Changing cursor");
+            super.changeCursor(c);
+        }
+        
+        @Override
+        public void bindView(View view, Context context, Cursor c) {
+            final CheckinHolder holder = (CheckinHolder)view.getTag();
+            
+            MCheckinData checkin = mCm.fillInStandardFields(c);
+            MLocation where = mLm.getLocation(checkin.locationId);
+            
+            // Title is name of the location
+            holder.titleView.setText(where.name);
+            
+            // Set subtitles based on current state
+            Format fullFormatter = new SimpleDateFormat("M/d/yyyy h:mm a");
+            if (checkin.exitTime == null || checkin.exitTime == 0L) {
+                holder.subtitleView.setText("You are currently here");
+                holder.subtitle2View.setText(
+                        "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
+            } else {
+                holder.subtitleView.setText(
+                        "Entered at " + fullFormatter.format(new Date(checkin.entryTime)));
+                holder.subtitle2View.setText(
+                        "Left at " + fullFormatter.format(new Date(checkin.exitTime)));
+            }
+        }
+        
+        @Override
+        public View newView(Context context, Cursor c, ViewGroup parent) {
+            View v = LayoutInflater.from(context).inflate(R.layout.plain_list_item, parent, false);
+            CheckinHolder holder = new CheckinHolder();
+            holder.titleView = (TextView)v.findViewById(R.id.plainTitle);
+            holder.subtitleView = (TextView)v.findViewById(R.id.plainSubtitle);
+            holder.subtitle2View = (TextView)v.findViewById(R.id.plainSubtitle2);
+            v.setTag(holder);
+            return v;
+        }
+    }
+    
+    private static class CheckinCursorLoader extends SimpleCursorLoader {
+        private long mDuration;
+        private CheckinManager mCm;
+
+        public CheckinCursorLoader(Context context, CheckinManager cm, long duration) {
+            super(context);
+            mDuration = duration;
+            mCm = cm;
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            return mCm.getRecentCheckinsCursor(mDuration);
+        }
+        
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.d(TAG, "onCreateLoader");
+        mLoader = new CheckinCursorLoader(this, mCm, MONTH);
+        return mLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.d(TAG, "onLoadFinished");
+        Cursor oldCursor = mCursorAdapter.swapCursor(cursor);
+        if (oldCursor != null && oldCursor != cursor && !oldCursor.isClosed()) {
+            Log.d(TAG, "replaced cursor");
+            oldCursor.close();
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        Log.d(TAG, "onLoaderReset");
+        Cursor oldCursor = mCursorAdapter.swapCursor(null);
+        if (oldCursor != null && !oldCursor.isClosed()) {
+            oldCursor.close();
         }
     }
 }
