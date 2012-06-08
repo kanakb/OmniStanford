@@ -8,8 +8,7 @@
     <LinearLayout
         android:id="@+id/scheduleArea"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.60"
+        android:layout_height="match_parent"
         android:orientation="vertical" >
         
         <ListView
@@ -20,63 +19,5 @@
         </ListView>
     </LinearLayout>
     
-    <ImageView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.01"
-        android:background="@android:color/holo_blue_light"
-        android:paddingBottom="2dp"
-        android:paddingLeft="5dp"
-        android:paddingRight="5dp"
-        android:paddingTop="2dp"
-        android:scaleType="fitXY" />
-
-    <RelativeLayout
-        android:id="@+id/activitiesArea"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.39"
-        android:padding="5dp"
-        android:orientation="vertical" >
-        
- 
-        <EditText
-            android:id="@+id/tagEditText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:layout_toLeftOf="@+id/tagCreateButton"
-            android:ems="10"
-            android:inputType="text">
-        </EditText>
-
-        <Button
-            android:id="@+id/tagCreateButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignTop="@+id/tagEditText"
-            android:text="@string/create_tag_button" />
-
-        <android.support.v7.widget.GridLayout
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:id="@+id/tagListArea"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@+id/tagEditText"
-            android:layout_alignLeft="@+id/tagEditText"
-            android:layout_alignParentTop="true"
-            android:layout_alignRight="@+id/tagCreateButton"
-            app:alignmentMode="alignBounds"
-            app:columnCount="4"
-            app:columnOrderPreserved="false"
-            app:useDefaultMargins="true" >
-
-        </android.support.v7.widget.GridLayout>
-
-    </RelativeLayout>
 
 </LinearLayout>
