@@ -68,7 +68,7 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_FEED_URI).append(",")
                     .append(MLocation.COL_IMAGE_URL).append(",")
                     .append(MLocation.COL_IMAGE)
-                    .append(") VALUES (?,?,?,?,?,?,?,?,?)");
+                    .append(") VALUES (?,?,?,?,?,?,?,?,?,?,?)");
                 mInsertLocation = db.compileStatement(sql.toString());
             }
         }
