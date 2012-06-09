@@ -247,10 +247,10 @@ public class ScheduleListFragment extends Fragment {
 					 int height = mHeight / 10;
 					 for(int i = 0; i < tags.size(); i++) {
 						 if(i < childCount) {
-							 Tag child = (Tag)layout.getChildAt(i);
+							 TagFrameLayout child = (TagFrameLayout)layout.getChildAt(i);
 							 child.setLayoutParams(new LinearLayout.LayoutParams(width, height));
 						 } else {
-							 Tag newTag = new Tag(view.getContext(), ((MTag) tags.get(i)).name, false);
+							 TagFrameLayout newTag = new TagFrameLayout(view.getContext(), ((MTag) tags.get(i)).name, false);
 							 newTag.setLayoutParams(new LinearLayout.LayoutParams(width, height));
 							 layout.addView(newTag);
 						 }

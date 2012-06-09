@@ -69,7 +69,7 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 		 Set<String> tags = getTagSet(this);
 		 if(tags != null) {
 			 for(String tagStr : tags) {
-				 Tag tag = new Tag(this, tagStr, true);
+				 TagFrameLayout tag = new TagFrameLayout(this, tagStr, true);
 				 mTagsList.addView(tag);
 			 }
 		 } 
@@ -86,7 +86,7 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 				 Set<String> tags = getTagSet(ScheduleActivity.this);
 				 if(!tags.contains(tagStr)) {
 					 tags.add(tagStr);
-					 Tag newTag = new Tag(v.getContext(), tagStr, true);
+					 TagFrameLayout newTag = new TagFrameLayout(v.getContext(), tagStr, true);
 					 mTagEditText.setText("");
 					 mTagsList.addView(newTag);
 					 

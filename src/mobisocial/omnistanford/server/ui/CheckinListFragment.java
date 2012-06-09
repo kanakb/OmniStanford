@@ -13,6 +13,11 @@ import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CheckedTextView;
+import android.widget.ListView;
 
 public class CheckinListFragment extends ListFragment 
 		implements LoaderCallbacks<Cursor> {
@@ -28,9 +33,19 @@ public class CheckinListFragment extends ListFragment
 
 		 mAdapter = new SimpleCursorAdapter(getActivity(),
 				 R.layout.list_item, null,
-				 new String[] { MCheckinData.COL_USER_NAME, MCheckinData.COL_USER_DORM, MCheckinData.COL_USER_DEPARTMENT },
+				 new String[] { MCheckinData.COL_USER_DORM, MCheckinData.COL_USER_NAME, MCheckinData.COL_USER_DEPARTMENT },
 				 new int[] { R.id.separator, R.id.title, R.id.subtitle }, 0);
 		 setListAdapter(mAdapter);
+		 getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		 
+		 getListView().setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position,
+					long id) {
+				CheckedTextView title = (CheckedTextView) view.findViewById(R.id.title);
+				title.toggle();
+			}
+		 });
 
 		 setListShown(false);
 		 getLoaderManager().initLoader(0, null, this);
