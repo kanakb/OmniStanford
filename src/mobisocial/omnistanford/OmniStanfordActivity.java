@@ -2,6 +2,7 @@ package mobisocial.omnistanford;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -149,7 +150,7 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
                     break;
                 }
             }
-            mButtonView.addView(tv);
+            //mButtonView.addView(tv);
             
             showRecent(mButtonView);
             
@@ -344,10 +345,13 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
         public TextView subtitleView;
         public TextView subtitle2View;
         public ImageView imageView;
+        public TextView separatorView;
     }
     
     private class CheckinsAdapter extends CursorAdapter {
         private LocationManager mLm;
+        private String mTitle = "";
+        private String mPreviousTitle = "";
         
         public CheckinsAdapter(Context context, Cursor c, int flags) {
             super(context, c, flags);
@@ -366,6 +370,28 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
             
             MCheckinData checkin = mCm.fillInStandardFields(c);
             MLocation where = mLm.getLocation(checkin.locationId);
+            mTitle = getTitleForTime(checkin);
+            
+            // Show separator if needed
+            boolean needSeparator = false;
+            final int position = c.getPosition();
+            if (position == 0) {
+                needSeparator = true;
+            } else {
+                c.moveToPosition(position - 1);
+                MCheckinData previous = mCm.fillInStandardFields(c);
+                mPreviousTitle = getTitleForTime(previous);
+                if (!mTitle.equals(mPreviousTitle)) {
+                    needSeparator = true;
+                }
+                c.moveToPosition(position);
+            }
+            if (needSeparator) {
+                holder.separatorView.setText(mTitle);
+                holder.separatorView.setVisibility(View.VISIBLE);
+            } else {
+                holder.separatorView.setVisibility(View.GONE);
+            }
             
             // Title is name of the location
             holder.titleView.setText(where.name);
@@ -404,8 +430,66 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
             holder.subtitleView = (TextView)v.findViewById(R.id.plainSubtitle);
             holder.subtitle2View = (TextView)v.findViewById(R.id.plainSubtitle2);
             holder.imageView = (ImageView)v.findViewById(R.id.locationImage);
+            holder.separatorView = (TextView)v.findViewById(R.id.plainSeparator);
             v.setTag(holder);
             return v;
+        }
+        
+        private String getTitleForTime(MCheckinData data) {
+            // Get the checkin time
+            long checkinTime = data.entryTime;
+            if (data.exitTime != null && data.exitTime != 0L) {
+                checkinTime = data.exitTime;
+            }
+            Calendar checkinCal = Calendar.getInstance();
+            checkinCal.setTimeInMillis(checkinTime);
+            
+            // Get the current time
+            long now = System.currentTimeMillis();
+            Calendar nowCal = Calendar.getInstance();
+            nowCal.setTimeInMillis(now);
+            
+            if (isSameDay(checkinCal, nowCal)) {
+                return "Today";
+            } else if (isSameDay(checkinCal, nowCal, 1)) {
+                return "Yesterday";
+            } else if (isSameWeek(checkinCal, nowCal)) {
+                return "This Week";
+            } else if (isSameWeek(checkinCal, nowCal, 1)) {
+                return "Last Week";
+            } else if (isSameMonth(checkinCal, nowCal)) {
+                return "This Month";
+            }
+            return "Older Locations";
+        }
+        
+        private boolean isSameDay(Calendar prev, Calendar curr) {
+            return prev.get(Calendar.YEAR) == curr.get(Calendar.YEAR) &&
+                    prev.get(Calendar.DAY_OF_YEAR) == curr.get(Calendar.DAY_OF_YEAR);
+        }
+        
+        private boolean isSameDay(Calendar prev, Calendar curr, int offset) {
+            Calendar newPrev = Calendar.getInstance();
+            newPrev.setTimeInMillis(prev.getTimeInMillis());
+            newPrev.add(Calendar.DATE, offset);
+            return isSameDay(newPrev, curr);
+        }
+        
+        private boolean isSameWeek(Calendar prev, Calendar curr) {
+            return prev.get(Calendar.YEAR) == curr.get(Calendar.YEAR) &&
+                    prev.get(Calendar.WEEK_OF_YEAR) == curr.get(Calendar.WEEK_OF_YEAR);
+        }
+        
+        private boolean isSameWeek(Calendar prev, Calendar curr, int offset) {
+            Calendar newPrev = Calendar.getInstance();
+            newPrev.setTimeInMillis(prev.getTimeInMillis());
+            newPrev.add(Calendar.WEEK_OF_YEAR, offset);
+            return isSameDay(newPrev, curr);
+        }
+        
+        private boolean isSameMonth(Calendar prev, Calendar curr) {
+            return prev.get(Calendar.YEAR) == curr.get(Calendar.YEAR) &&
+                    prev.get(Calendar.MONTH) == curr.get(Calendar.MONTH);
         }
     }
     
