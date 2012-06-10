@@ -68,7 +68,7 @@ public class LocationManager extends ManagerBase {
                     .append(MLocation.COL_FEED_URI).append(",")
                     .append(MLocation.COL_IMAGE_URL).append(",")
                     .append(MLocation.COL_IMAGE)
-                    .append(") VALUES (?,?,?,?,?,?,?,?,?)");
+                    .append(") VALUES (?,?,?,?,?,?,?,?,?,?,?)");
                 mInsertLocation = db.compileStatement(sql.toString());
             }
         }
@@ -217,6 +217,23 @@ public class LocationManager extends ManagerBase {
             } else {
                 return null;
             }
+        } finally {
+            c.close();
+        }
+    }
+    
+    public List<MLocation> getLocationWithDuplicates(String principal) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_PRINCIPAL + "=?";
+        String[] selectionArgs = new String[] { principal };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            List<MLocation> result = new ArrayList<MLocation>();
+            while (c.moveToNext()) {
+                result.add(fillInStandardFields(c));
+            }
+            return result;
         } finally {
             c.close();
         }

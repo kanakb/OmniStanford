@@ -174,7 +174,9 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
     }
     
     private void constructMap(List<MCheckinData> checkins) {
+        Log.d(TAG, "refreshing map");
         synchronized(mIdMap) {
+            mIdMap.clear();
             for (MCheckinData checkin : checkins) {
                 mIdMap.put(new Long(mIdMap.size() + 1), checkin.id);
             }
