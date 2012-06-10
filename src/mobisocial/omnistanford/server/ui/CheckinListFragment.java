@@ -1,5 +1,7 @@
 package mobisocial.omnistanford.server.ui;
 
+import com.actionbarsherlock.view.MenuItem;
+
 import mobisocial.omnistanford.R;
 import mobisocial.omnistanford.server.db.MCheckinData;
 import mobisocial.omnistanford.server.db.OmniStanfordContentProvider;
@@ -8,16 +10,25 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
 import android.widget.CheckedTextView;
 import android.widget.ListView;
+import android.widget.PopupMenu;
+import android.widget.RadioGroup;
+import android.widget.Toast;
 
 public class CheckinListFragment extends ListFragment 
 		implements LoaderCallbacks<Cursor> {
@@ -32,9 +43,9 @@ public class CheckinListFragment extends ListFragment
 		 setEmptyText("No checkins");
 
 		 mAdapter = new SimpleCursorAdapter(getActivity(),
-				 R.layout.list_item, null,
-				 new String[] { MCheckinData.COL_USER_DORM, MCheckinData.COL_USER_NAME, MCheckinData.COL_USER_DEPARTMENT },
-				 new int[] { R.id.separator, R.id.title, R.id.subtitle }, 0);
+				 R.layout.server_checkin_list_item, null,
+				 new String[] { MCheckinData.COL_USER_NAME, MCheckinData.COL_USER_DEPARTMENT },
+				 new int[] { R.id.checkin_title, R.id.checkin_subtitle }, 0);
 		 setListAdapter(mAdapter);
 		 getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 		 
@@ -42,8 +53,11 @@ public class CheckinListFragment extends ListFragment
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position,
 					long id) {
-				CheckedTextView title = (CheckedTextView) view.findViewById(R.id.title);
-				title.toggle();
+				FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+			    // Create and show the dialog.
+			    DialogFragment newFragment = MenuDialogFragment.newInstance("");
+			    newFragment.show(ft, "dialog");
 			}
 		 });
 
@@ -95,4 +109,44 @@ public class CheckinListFragment extends ListFragment
 	public void onLoaderReset(Loader<Cursor> loader) {
 		mAdapter.swapCursor(null);
 	}
+}
+
+class MenuDialogFragment extends DialogFragment {
+    String mName;
+
+    static MenuDialogFragment newInstance(String name) {
+    	MenuDialogFragment f = new MenuDialogFragment();
+
+        Bundle args = new Bundle();
+        args.putString("name", name);
+        f.setArguments(args);
+
+        return f;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mName = getArguments().getString("name");
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+            Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.dining_menu_dialog, container, false);
+        RadioGroup rg = (RadioGroup) v.findViewById(R.id.radio_group);
+        rg.check(R.id.lunch_radio_button);
+        
+        getDialog().setTitle("Select dining type:");
+
+        // Watch for button clicks.
+        Button button = (Button)v.findViewById(R.id.cancel_button);
+        button.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
+
+        return v;
+    }
 }
