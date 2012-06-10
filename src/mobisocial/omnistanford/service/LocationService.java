@@ -151,7 +151,9 @@ public class LocationService extends Service {
     			mLocationManager.requestSingleUpdate(criteria, mSingleLocationUpdateListener, getMainLooper());
     		}
 		}
-		Log.i(TAG, "first best result:" + bestResult.toString());
+		if (bestResult != null) {
+		    Log.i(TAG, "first best result:" + bestResult.toString());
+		}
 		return bestResult;
 	}
 	
@@ -355,12 +357,13 @@ public class LocationService extends Service {
 				List<MCheckinData> recentCheckins = cm.getRecentOpenCheckins(MONTH);
 				for(MCheckinData checkin : recentCheckins) {
 					if(checkin.locationId != match.id) {
+					    Log.d(TAG, "isAtDifferentLocation");
 						isAtDifferentLocation = true;
 						break;
 					}
 				}
 			}
-			if(match == null || match.feedUri == null || isAtDifferentLocation){
+			if(match == null || isAtDifferentLocation){
     			// Exit open checkins (if we get enough updates outside a valid location)
     			Log.d(TAG, "exiting open");
     			synchronized(mCheckoutCount) {
@@ -377,7 +380,7 @@ public class LocationService extends Service {
                                 data.exitTime = System.currentTimeMillis();
                                 Log.d(TAG, "exiting id " + data.id + " " + loc.name);
                                 cm.updateCheckin(data);
-    							if (match != null && match.feedUri == null) {
+    							if (match != null && (match.feedUri == null || match.feedUri.equals(""))) {
     							    continue;
     							}
     							Request request = new Request(loc.principal, "checkout", null);

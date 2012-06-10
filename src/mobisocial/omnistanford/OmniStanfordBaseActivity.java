@@ -84,11 +84,13 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                     LocationManager lm = new LocationManager(App.getDatabaseSource(this));
                     for (int i = 0; i < array.size(); i++) {
                         Log.d(TAG, "Principal: " + principals.get(i));
-                        MLocation loc = lm.getLocation(principals.get(i));
-                        if (loc != null) {
-                            loc.feedUri = Uri.parse(array.get(i));
-                        	Log.i(TAG, loc.feedUri.toString());
-                        	lm.updateLocation(loc);
+                        List<MLocation> locs = lm.getLocationWithDuplicates(principals.get(i));
+                        for (MLocation loc : locs) {
+                            if (loc != null) {
+                                loc.feedUri = Uri.parse(array.get(i));
+                            	Log.i(TAG, loc.feedUri.toString());
+                            	lm.updateLocation(loc);
+                            }
                         }
                     }
                 }

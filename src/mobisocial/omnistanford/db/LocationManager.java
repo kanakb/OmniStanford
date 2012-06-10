@@ -222,6 +222,23 @@ public class LocationManager extends ManagerBase {
         }
     }
     
+    public List<MLocation> getLocationWithDuplicates(String principal) {
+        SQLiteDatabase db = initializeDatabase();
+        String table = MLocation.TABLE;
+        String selection = MLocation.COL_PRINCIPAL + "=?";
+        String[] selectionArgs = new String[] { principal };
+        Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
+        try {
+            List<MLocation> result = new ArrayList<MLocation>();
+            while (c.moveToNext()) {
+                result.add(fillInStandardFields(c));
+            }
+            return result;
+        } finally {
+            c.close();
+        }
+    }
+    
     public MLocation getLocation(String name, String type) {
         SQLiteDatabase db = initializeDatabase();
         String table = MLocation.TABLE;
