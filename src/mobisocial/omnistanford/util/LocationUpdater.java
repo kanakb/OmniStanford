@@ -75,16 +75,6 @@ public class LocationUpdater {
                 Log.e(TAG, "Error parsing JSON object");
             }
         }
-        MLocation temp = new MLocation();
-        temp.name = "Kanak's Neighborhood";
-        temp.principal = "kinselofant@gmail.com";
-        temp.accountType = "com.google";
-        temp.type = "Home";
-        temp.minLatitude = 37.34459;
-        temp.maxLatitude = 37.34925;
-        temp.minLongitude = -122.02596;
-        temp.maxLongitude = -122.01925;
-        mLm.ensureLocation(temp);
     }
     
     private void updateImage(MLocation loc, String imageUrl) {
