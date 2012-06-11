@@ -44,6 +44,9 @@ public class Request {
 		try {
 			JSONObject from = new JSONObject();
 			MAccount account = Util.loadAccount(context);
+			if (account == null) {
+			    return null;
+			}
     		from.put("name", account.name);
     		from.put("hash", account.identifier);
     		from.put("type", account.type);
@@ -73,7 +76,11 @@ public class Request {
 			LocationManager lm = new LocationManager(App.getDatabaseSource(context));
 			MLocation loc = lm.getLocation(mLocPrincipal);
 			mFeed = musubi.getFeed(loc.feedUri);
-			mFeed.insert(new AppStateObj(toJSON(context), null));
+			JSONObject json = toJSON(context);
+			if (json == null) {
+			    return null;
+			}
+			mFeed.insert(new AppStateObj(json, null));
 			if(mResHandler != null)
 				mFeed.registerStateObserver(mObserver);
 		}

@@ -11,8 +11,10 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -102,6 +104,23 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
         	fragmentTransaction.add(R.id.contentArea, fragment);
         	fragmentTransaction.commit();
         } else {
+            if (Util.isFirstTime(this)) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("In a minute, " +
+                        "OmniStanford will be able to find locations for you automatically.")
+                        .setTitle("Welcome to OmniStanford!")
+                        .setCancelable(false)
+                        .setPositiveButton("Okay", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Util.setFirstTime(OmniStanfordActivity.this);
+                                dialog.cancel();
+                            }
+                        });
+                AlertDialog alert = builder.create();
+                alert.show();
+            }
+            
             mButtonView = new LinearLayout(this);
             mButtonView.setOrientation(LinearLayout.VERTICAL);
             

@@ -26,6 +26,15 @@ public class Util {
 		return settings.getString("account_hash", null);
 	}
 	
+	public static boolean isFirstTime(Context context) {
+	    SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, 0);
+	    return settings.getBoolean("first_time", true);
+	}
+	
+	public static void setFirstTime(Context context) {
+	    context.getSharedPreferences(PREFS_NAME, 0).edit().putBoolean("first_time", false);
+	}
+	
 	public static void setPickedAccount(Context context, String name, String type, String hash) {
 		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, 0);
 		SharedPreferences.Editor editor = settings.edit();
