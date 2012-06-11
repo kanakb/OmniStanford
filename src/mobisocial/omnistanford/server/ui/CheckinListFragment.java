@@ -1,7 +1,5 @@
 package mobisocial.omnistanford.server.ui;
 
-import com.actionbarsherlock.view.MenuItem;
-
 import mobisocial.omnistanford.R;
 import mobisocial.omnistanford.server.db.MCheckinData;
 import mobisocial.omnistanford.server.db.OmniStanfordContentProvider;
@@ -24,11 +22,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
-import android.widget.CheckedTextView;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 public class CheckinListFragment extends ListFragment 
 		implements LoaderCallbacks<Cursor> {

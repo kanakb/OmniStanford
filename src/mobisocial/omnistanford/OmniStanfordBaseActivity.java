@@ -17,6 +17,7 @@ import mobisocial.omnistanford.db.MLocation;
 import mobisocial.omnistanford.util.LocationUpdater;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.Musubi;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
@@ -187,7 +188,11 @@ public class OmniStanfordBaseActivity extends SherlockFragmentActivity {
                     Log.d(TAG, toCreate.toString());
                     intent.putStringArrayListExtra("principals", principals);
                     Log.d(TAG, "sent principals: " + principals);
-                    startActivityForResult(intent, REQUEST_CREATE_FEED);
+                    try {
+                        startActivityForResult(intent, REQUEST_CREATE_FEED);
+                    } catch (ActivityNotFoundException e) {
+                        Log.w(TAG, "activity not found", e);
+                    }
                 }
             } catch (JSONException e) {
                 Log.e(TAG, "JSON error", e);

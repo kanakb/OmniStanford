@@ -34,7 +34,6 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Base64;
 import android.util.Log;
 
 public class LocationService extends Service {

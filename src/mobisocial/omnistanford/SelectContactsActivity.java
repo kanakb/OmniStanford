@@ -29,6 +29,7 @@ import mobisocial.omnistanford.util.ResponseHandler;
 import mobisocial.omnistanford.util.Util;
 import mobisocial.socialkit.musubi.DbObj;
 import mobisocial.socialkit.musubi.Musubi;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -136,7 +137,15 @@ public class SelectContactsActivity extends OmniStanfordBaseActivity
             return;
         }
         create.putExtra(EXTRA_NAME, primary.toString());
-        startActivityForResult(create, REQUEST_CREATE_FEED);
+        try {
+            startActivityForResult(create, REQUEST_CREATE_FEED);
+        } catch (ActivityNotFoundException e) {
+            Log.w(TAG, "activity not found", e);
+            Toast.makeText(
+                    this,
+                    "The installed version of Musubi does not support discovery features.",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
     
     @Override

@@ -11,6 +11,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -235,7 +236,15 @@ public class OmniStanfordActivity extends OmniStanfordBaseActivity
                     return true;
                 }
             	Intent picker = new Intent(ACTION_OWNED_ID_PICKER);
-                startActivityForResult(picker, REQUEST_PICK_ID);
+            	try {
+            	    startActivityForResult(picker, REQUEST_PICK_ID);
+            	} catch (ActivityNotFoundException e) {
+            	    Log.w(TAG, "activity not found", e);
+            	    Toast.makeText(
+            	            this,
+            	            "The installed version of Musubi does not support discovery features.",
+            	            Toast.LENGTH_SHORT).show();
+            	}
                 return true;
             case R.id.menu_schedule:
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
