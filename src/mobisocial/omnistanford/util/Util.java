@@ -32,7 +32,7 @@ public class Util {
 	}
 	
 	public static void setFirstTime(Context context) {
-	    context.getSharedPreferences(PREFS_NAME, 0).edit().putBoolean("first_time", false);
+	    context.getSharedPreferences(PREFS_NAME, 0).edit().putBoolean("first_time", false).commit();
 	}
 	
 	public static void setPickedAccount(Context context, String name, String type, String hash) {
