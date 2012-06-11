@@ -189,8 +189,9 @@ public class TagManager extends ManagerBase {
         SQLiteDatabase db = initializeDatabase();
         String table = MTag.TABLE;
         String selection = MTag.COL_START_TIME + ">=? AND " + 
-        				MTag.COL_END_TIME + "<=?";
-        String[] selectionArgs = new String[] { Long.toString(start), Long.toString(end) };
+        				MTag.COL_END_TIME + "<=? AND " + 
+        				MTag.COL_END_TIME + ">=?";
+        String[] selectionArgs = new String[] { Long.toString(start), Long.toString(end), Long.toString(start) };
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
     	List<MTag> tags = new ArrayList<MTag>();
         try {
@@ -217,8 +218,9 @@ public class TagManager extends ManagerBase {
         SQLiteDatabase db = initializeDatabase();
         String table = MTag.TABLE;
         String selection = MTag.COL_START_TIME + ">=? AND " + 
-        				MTag.COL_END_TIME + "<=?";
-        String[] selectionArgs = new String[] { Long.toString(start), Long.toString(end) };
+        				MTag.COL_END_TIME + "<=? AND " + 
+        				MTag.COL_END_TIME + ">=?";
+        String[] selectionArgs = new String[] { Long.toString(start), Long.toString(end), Long.toString(start) };
         Cursor c = db.query(table, STANDARD_FIELDS, selection, selectionArgs, null, null, null);
     	List<MTag> tags = new ArrayList<MTag>();
         try {

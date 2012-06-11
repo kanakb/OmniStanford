@@ -33,9 +33,9 @@ public class JavaScriptInterface {
         Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
     }
     
-    public String getDailyData() {
+    public String getDailyData(String time) {
     	TagManager tm = new TagManager(App.getDatabaseSource(mContext));
-    	List<MTag> tags = tm.getDailyTags(new Date(System.currentTimeMillis()));
+    	List<MTag> tags = tm.getDailyTags(new Date(Long.parseLong(time)));
     	return convertToJSONString(tags, "daily");
     }
     

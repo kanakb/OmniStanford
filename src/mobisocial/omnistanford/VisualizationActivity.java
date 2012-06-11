@@ -25,8 +25,11 @@ public class VisualizationActivity extends OmniStanfordBaseActivity {
 	    mWebView.getSettings().setJavaScriptEnabled(true);
 	    mWebView.addJavascriptInterface(new JavaScriptInterface(this), "Android");
 	    mWebView.setWebChromeClient(new OmniStanfordWebChromeClient());
-	    mWebView.loadUrl("http://omnistanford.herokuapp.com");
-	    mWebView.setVisibility(View.INVISIBLE);
+
+	    Long time = getIntent().getExtras().getLong("time");
+	    String url = "http://omnistanford.herokuapp.com";
+	    if(time != null) url += "/?time=" + time.toString();
+	    mWebView.loadUrl(url);
 	}
 	
 	private class OmniStanfordWebChromeClient extends WebChromeClient {

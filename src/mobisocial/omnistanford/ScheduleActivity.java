@@ -118,6 +118,9 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 		 case R.id.menu_save_schedule:
 			 saveSchedule();
 			 Intent intent = new Intent(this, VisualizationActivity.class);
+			 Calendar calendar = Calendar.getInstance();
+			 calendar.set(Calendar.DATE, mViewPager.getCurrentItem() + 1);
+			 intent.putExtra("time", calendar.getTimeInMillis());
 			 startActivity(intent);
 			 return true;
 		 default:
@@ -138,15 +141,16 @@ public class ScheduleActivity extends OmniStanfordBaseActivity {
 					 MLocation loc = lm.getLocation(slot.locationId);
 					 
 					 long startTime = slot.start;
-					 long total = slot.end - slot.start;
-					 List<Object> tags = hm.get("tags");
-					 for(Object o : tags) {
-						 MTag tag = (MTag) o;
-						 tag.locationId = loc.id;
-						 tag.startTime = startTime;
-						 tag.endTime = startTime + total / tags.size();
-						 startTime = tag.endTime;
-						 tm.ensureTag(tag);
+					 if(slot.end != null && slot.end != 0L) {
+						 long total = slot.end - slot.start;
+						 List<Object> tags = hm.get("tags");
+						 for(Object o : tags) {
+							 MTag tag = (MTag) o;
+							 tag.locationId = loc.id;
+							 tag.startTime = startTime;
+							 tag.endTime = startTime + total / tags.size();
+							 tm.ensureTag(tag);
+						 }
 					 }
 				 }
 			 }
